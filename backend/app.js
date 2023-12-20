@@ -4,6 +4,9 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 
+const middlewares = require('./src/middlewares');
+const api = require('./src/api');
+
 const indexRouter = require("./routes/index");
 const clockRouter = require("./routes/clock");
 const databaseRouter = require("./routes/database");
@@ -30,5 +33,16 @@ app.use("/database", databaseRouter);
 app.use("/familyTree", familyTree);
 app.use("/accessControl", accessControl);
 app.use("/relationsships", relationsships);
+
+app.get('/ahihi', (req, res) => {
+    res.json({
+        message: '🦄🌈✨👋🌎🌍🌏✨🌈🦄'
+    });
+});
+
+app.use('/api/v1', api);
+
+app.use(middlewares.notFound);
+app.use(middlewares.errorHandler);
 
 module.exports = app;

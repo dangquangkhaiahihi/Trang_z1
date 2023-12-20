@@ -65,6 +65,7 @@ model Relationsships {
 
 model Users {
   UserID                              Int                      @id @default(autoincrement())
+  refreshTokens RefreshToken[]
   Username                            String                   @db.VarChar(255)
   Password                            String                   @db.VarChar(255)
   Email                               String                   @unique @db.VarChar(255)
@@ -78,6 +79,16 @@ model Users {
   Messages_Messages_MessageIDToUsers  Messages?                @relation("Messages_MessageIDToUsers")
   Messages_Messages_ReceiverIDToUsers Messages[]               @relation("Messages_ReceiverIDToUsers")
   Messages_Messages_SenderIDToUsers   Messages[]               @relation("Messages_SenderIDToUsers")
+}
+
+model RefreshToken {
+  id          String   @id @unique @default(uuid())
+  hashedToken String
+  userId      Int
+  User        Users     @relation(fields: [userId], references: [UserID], onDelete: Cascade)
+  revoked     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Persons {
