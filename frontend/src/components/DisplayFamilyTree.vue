@@ -1,41 +1,172 @@
-<script lang="ts" setup>
+<script setup>
 import { h, ref } from "vue";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import { MiniMap } from "@vue-flow/minimap";
-import { VueFlow, useVueFlow, type Node, type Edge } from "@vue-flow/core";
+import { VueFlow, useVueFlow } from "@vue-flow/core";
 import CustomNode from "./CustomNode.vue";
 import CustomEdge from "./CustomEdge.vue";
+import axios from "axios";
 
-const { onConnect, addEdges } = useVueFlow();
+let backendURL = import.meta.env.VITE_BACKEND_URL;
 
-const nodes = ref<Node[]>([
-  { id: "1", type: "input", label: "Mehdi", position: { x: 250, y: 5 } },
-  { id: "2", type: "output", label: "Maeee", position: { x: 100, y: 100 } },
-  { id: "3", type: "output", label: "Zey", position: { x: 400, y: 100 } },
-  { id: "5", type: "output", label: "Tiara", position: { x: 250, y: 200 } },
-  {
-    id: "4",
-    type: "custom",
-    label: "bichescounter:",
-    position: { x: 100, y: 300 },
-  },
-]);
+const { onConnect, addEdges, toObject } = useVueFlow();
 
-const edges = ref<Edge[]>([
-  { id: "e1-2", source: "1", target: "2" },
-  { id: "e2-1", source: "2", target: "1" },
-  { id: "e1-4", source: "2", target: "4" },
-  { id: "e1-3", source: "1", target: "3" },
-  { id: "e1-5", source: "1", target: "5" },
-]);
+const sqlData = ref("");
 
-onConnect((params) => {
-  addEdges([params]);
-});
+const nodes = ref([]);
+
+const edges = ref([]);
+
+const flowKey = "example-flow";
+
+const position = ref();
+const familyTreeId = 5;
+const onSave = () => {
+  const nodePosition = JSON.stringify(toObject());
+
+  axios
+    .post(`${backendURL}/familyTree/nodes/${familyTreeId}`, {
+      NodePosition: nodePosition,
+    })
+    .then((response) => {
+      console.log(response.data);
+      // Handle the response as needed
+    })
+    .catch((error) => {
+      console.error("Error saving node positions:", error);
+    });
+};
+
+const onRestore = () => {
+  axios
+    .get(`${backendURL}/familyTree/nodes/${familyTreeId}`)
+    .then((response) => {
+      console.log(response.data);
+      // Handle the response as needed
+      const nodePositionString = response.data.NodePosition;
+
+      try {
+        const flow = JSON.parse(nodePositionString);
+        position.value = flow;
+        nodes.value = flow.nodes;
+        edges.value = flow.edges;
+      } catch (error) {
+        console.error("Error parsing NodePosition:", error);
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching node positions:", error);
+    });
+};
+
+const getDatabase = () => {
+  // replace this with the actual family tree ID
+  axios
+    .get(`${backendURL}/persons/familyTree/${familyTreeId}`)
+    .then((response) => {
+      // Handle the response here
+      console.log(response.data);
+      sqlData.value = response.data;
+
+      const startY = 100; // Adjust the starting Y position
+      const spacingY = 100; // Adjust the spacing between rows
+
+      const generations = new Map();
+      const generationHeights = {
+        "The Greatest Generation": 0,
+        "The Silent Generation": 1,
+        "The Baby Boomer Generation": 2,
+        "Generation X": 3,
+        Millennials: 4,
+        "Generation Z": 5,
+        "Gen Alpha": 6,
+      };
+
+      // Use a dynamic variable to track the current X position for each generation
+      const startXByGeneration = {};
+
+      response.data.forEach((person, index) => {
+        const birthYear = new Date(person.BirthDate).getFullYear();
+        let generation;
+        if (birthYear >= 1901 && birthYear <= 1927) {
+          generation = "The Greatest Generation";
+        } else if (birthYear >= 1928 && birthYear <= 1945) {
+          generation = "The Silent Generation";
+        } else if (birthYear >= 1946 && birthYear <= 1964) {
+          generation = "The Baby Boomer Generation";
+        } else if (birthYear >= 1965 && birthYear <= 1980) {
+          generation = "Generation X";
+        } else if (birthYear >= 1981 && birthYear <= 1996) {
+          generation = "Millennials";
+        } else if (birthYear >= 1996 && birthYear <= 2012) {
+          generation = "Generation Z";
+        } else {
+          generation = "Gen Alpha";
+        }
+
+        // Set Y position for each generation
+        const newY = startY + generationHeights[generation] * spacingY;
+
+        // Set X position for each person within the same generation
+        const startX =
+          startXByGeneration[generation] ||
+          (startXByGeneration[generation] = 250);
+
+        console.log(newY, "newY");
+        nodes.value.push({
+          id: person.PersonID.toString(),
+          type: "output",
+          label: person.Firstname,
+          position: { x: startX, y: newY },
+        });
+
+        // Update the X position for the next person in the same generation
+        startXByGeneration[generation] += 170; // Adjust spacingX as needed
+
+        // Store the generation for later use
+        generations.set(person.PersonID, generation);
+      });
+      generations.forEach((generation, personID) => {
+        console.log(`Person ID: ${personID}, Generation: ${generation}`);
+      }); // Map of PersonID and generation
+    });
+  axios
+    .get(`${backendURL}/relationsships/familyTree/${familyTreeId}`)
+    .then((response) => {
+      // Handle the response here
+      console.log(response.data);
+
+      // Map relationships to nodes and edges
+      response.data.forEach((relationship) => {
+        const sourcePerson = nodes.value.find(
+          (node) => node.id === relationship.PersonOneID.toString()
+        );
+        const targetPerson = nodes.value.find(
+          (node) => node.id === relationship.PersonTwoID.toString()
+        );
+
+        if (sourcePerson && targetPerson) {
+          edges.value.push({
+            id: `e${relationship.RelationshipID}`,
+            source: sourcePerson.id,
+            target: targetPerson.id,
+          });
+        }
+      });
+    });
+};
 </script>
 
 <template>
+  <div class="getPersons">
+    <v-btn @click="getDatabase()">Get Database Query</v-btn>
+    <p>{{ sqlData }}</p>
+  </div>
+  <div class="saveFlow">
+    <v-btn @click="onSave()">Save Flow</v-btn>
+    <p>{{ flowKey }}</p>
+  </div>
   <div style="height: 100vh">
     <VueFlow
       v-model:nodes="nodes"
@@ -60,6 +191,10 @@ onConnect((params) => {
         <CustomEdge v-bind="edgeProps" />
       </template>
     </VueFlow>
+  </div>
+  <div class="restoreFlow">
+    <v-btn @click="onRestore()">Restore Flow</v-btn>
+    <p>{{ flowKey }}</p>
   </div>
 </template>
 

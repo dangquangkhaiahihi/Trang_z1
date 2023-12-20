@@ -64,17 +64,15 @@
 </template>
 
 <script>
-import axios from 'axios';
-
 export default {
-  name: 'Profil',
+  name: 'App',
   data() {
     return {
       userProfile: {
-        vorname: '',
-        nachname: '',
-        stadt: '',
-        image: '/images/default-avatar.jpg', // Fügen Sie einen Standard-Avatar hinzu
+        vorname: 'Fatih',
+        nachname: 'Bozkurt',
+        stadt: 'Stockelsdorf',
+        image: '/../images/Bild1.jpg',
       },
       familienmitglied: {
         grad: '',
@@ -86,39 +84,13 @@ export default {
       verwandtschaftsgrade: ['Elternteil', 'Geschwister'],
     };
   },
-  created() {
-    this.loadUserData(); // Laden Sie die Benutzerdaten beim Erstellen der Komponente
-  },
   methods: {
-    async loadUserData() {
-      try {
-        const response = await axios.get('/api/user/profile', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,  // Änderung hier
-          },
-        });
-
-        this.userProfile = response.data;
-      } catch (error) {
-        console.error('Fehler beim Laden der Benutzerdaten:', error);
-      }
-    },
-    async speichern() {
-      try {
-        // Beispiel: Update der Benutzerdaten im Backend
-        await axios.put('/api/user/profile', this.userProfile, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-          },
-        });
-        console.log('Benutzerinformationen erfolgreich gespeichert');
-      } catch (error) {
-        console.error('Fehler beim Speichern der Benutzerdaten:', error);
-      }
+    speichern() {
+      console.log('Benutzerinformationen gespeichert:', this.userProfile);
     },
     speichernFamilienmitglied() {
       console.log('Familienmitglied gespeichert:', this.familienmitglied);
-      // Hier können Sie die Logik zum Speichern des Familienmitglieds implementieren
+      // Hier kannst du die Logik zum Speichern des Familienmitglieds implementieren
     },
   },
 };
@@ -126,6 +98,6 @@ export default {
 
 <style>
 .profile-card {
-  width: 100%;
+  width: 100%; /* Füllt die Breite des Containers aus */
 }
 </style>

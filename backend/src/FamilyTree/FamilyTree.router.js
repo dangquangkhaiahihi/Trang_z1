@@ -63,4 +63,50 @@ familyTreeRouter.get("/search/:name", async (req, res) => {
   }
 });
 
+familyTreeRouter.get("/nodes/:familyTreeId", async (req, res) => {
+  const familyTreeId = Number(req.params.familyTreeId);
+  try {
+    const nodes = await familyTreeService.getNodePosition(familyTreeId);
+    if (!nodes) {
+      return res.status(404).json({ message: "Nodes not found" });
+    } else {
+      return res.status(200).json(nodes);
+    }
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+familyTreeRouter.post("/nodes/:familyTreeId", async (req, res) => {
+  const familyTreeId = Number(req.params.familyTreeId);
+  const nodePosition = req.body.NodePosition;
+  try {
+    const nodes = await familyTreeService.setNodePosition(
+      nodePosition,
+      familyTreeId
+    );
+    if (!nodes) {
+      return res.status(404).json({ message: "Can't save Position" });
+    } else {
+      return res.status(200).json(nodes);
+    }
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+familyTreeRouter.delete("/nodes/:familyTreeId", async (req, res) => {
+  const familyTreeId = Number(req.params.familyTreeId);
+  try {
+    const familyTree = await familyTreeService.deleteNodePosition(familyTreeId);
+    if (!familyTree) {
+      return res.status(404).json({ message: "FamilyTree not found" });
+    } else {
+      return res.status(200).json(familyTree);
+    }
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = familyTreeRouter;

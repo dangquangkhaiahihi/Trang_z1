@@ -7,26 +7,29 @@
 
         <v-card-item>
           <v-form @submit.prevent>
-          <v-text-field
-                prepend-inner-icon="mdi-email"
-                v-model="email"
-                :rules="emailRules"
-                label="E-Mail"
-            ></v-text-field>
+            <v-text-field
+              prepend-inner-icon="mdi-email"
+              v-model="email"
+              :rules="emailRules"
+              label="E-Mail"
+            >
+              <!-- to see other icons just https://fonts.google.com/icons -->
+            </v-text-field>
             <v-text-field
                 prepend-inner-icon="mdi-lock"
                 v-model="password"
                 :rules="passwordRules"
                 label="Passwort"
                 type="password"
-            ></v-text-field>
+            >
+            </v-text-field>
             <v-checkbox v-model="checkbox" label="remember me" />
 
             <v-btn type="submit" block class="mt-2">LOGIN</v-btn>
 
             <v-row class="mt-2">
               <v-col>
-                Kein Konto? <span @click="redirectToRegister" class="text-h6 link">Erstell dir eines</span>
+                Kein Konto? <span @click="redirectToRegister" class="text-h6 link">ERSTELL DIR EINES</span>
               </v-col>
             </v-row>
 
@@ -59,7 +62,6 @@ export default {
     ],
   }),
   methods: {
-
     redirectToRegister() {
       this.$router.push('/register');
     },
@@ -68,6 +70,7 @@ export default {
 </script>
 
 <style>
+
 .link {
   cursor: pointer;
   color: hotpink;

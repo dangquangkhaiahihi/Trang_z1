@@ -2,7 +2,6 @@ const express = require("express");
 const { body, validationResult } = require("express-validator");
 const UsersService = require("./Users");
 
-
 const Usersrouter = express.Router();
 
 // GET: Get all users #tested

@@ -1,6 +1,5 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-import axios from "axios";  // Importiere Axios
 import * as dotenv from "dotenv";
 
 console.log(import.meta.env);
@@ -15,10 +14,6 @@ import "@mdi/font/css/materialdesignicons.css";
 import router from "./router";
 
 const app = createApp(App);
-
-// Verwende Axios in der gesamten Anwendung
-app.config.globalProperties.$axios = axios;
-
 const customDarkTheme = {
   dark: true,
   colors: {
@@ -33,7 +28,6 @@ const customDarkTheme = {
     warning: "#fb8c00",
   },
 };
-
 const customLightTheme = {
   dark: false,
   colors: {
@@ -51,29 +45,28 @@ const customLightTheme = {
 
 app.use(router);
 app.use(
-    createVuetify({
-      components,
-      directives,
-      defaults: {
-        VBtn: {
-          color: "secondary",
-          variant: "tonal",
-          rounded: "xl",
-        },
-        VTextField: {
-          outlined: true,
-          color: "third",
-        },
+  createVuetify({
+    components,
+    directives,
+    defaults: {
+      VBtn: {
+        color: "secondary",
+        variant: "tonal",
+        rounded: "xl",
       },
-      theme: {
-        defaultTheme: "customLightTheme",
-        themes: {
-          customLightTheme,
-          customDarkTheme,
-        },
+      VTextField: {
+        outlined: true,
+        color: "third",
       },
-    })
+    },
+    theme: {
+      defaultTheme: "customLightTheme",
+      themes: {
+        customLightTheme,
+        customDarkTheme,
+      },
+    },
+  })
 );
 
 app.mount("#app");
-//

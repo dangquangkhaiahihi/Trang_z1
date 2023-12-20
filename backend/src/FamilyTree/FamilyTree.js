@@ -21,6 +21,42 @@ const searchFamilyTrees = async (name) => {
   });
 };
 
+const setNodePosition = (nodePosition, familyTreeID) => {
+  return prisma.familyTree.update({
+    where: {
+      FamilyTreeID: familyTreeID,
+    },
+    data: {
+      NodePosition: nodePosition,
+    },
+  });
+};
+
+const getNodePosition = (familyTreeID) => {
+  return prisma.familyTree.findUnique({
+    where: {
+      FamilyTreeID: familyTreeID,
+    },
+    select: {
+      NodePosition: true,
+    },
+  });
+};
+
+const deleteNodePosition = (familyTreeID) => {
+  return prisma.familyTree.update({
+    where: {
+      FamilyTreeID: familyTreeID,
+    },
+    data: {
+      NodePosition: null, // Set to null or whatever default value you prefer
+    },
+    select: {
+      NodePosition: true,
+    },
+  });
+};
+
 const retrievePersonsInFamTree = async (familyTreeID) => {
   const familyTree = await prisma.familyTree.findUnique({
     where: {
@@ -89,4 +125,7 @@ module.exports = {
   searchFamilyTrees,
   retrievePersonsInFamTree,
   createFamilyTree,
+  setNodePosition,
+  getNodePosition,
+  deleteNodePosition,
 };

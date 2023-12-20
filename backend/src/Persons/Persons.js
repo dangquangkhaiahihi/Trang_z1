@@ -40,27 +40,21 @@ const getAllPersonsinFamilyTree = async (familyTreeId) => {
       FamilyTreeID: parseInt(familyTreeId),
     },
     orderBy: {
-      BirthDate: "desc",
+      BirthDate: "asc",
     },
   });
 
   return familyObjects;
 };
 
-module.exports = { createPerson, getAllPersonsinFamilyTree };
+const getPerson = async (personId) => {
+  const person = await prisma.persons.findFirst({
+    where: {
+      PersonID: parseInt(personId),
+    },
+  });
 
-/*
-const personModel = Prisma.validator<Prisma.PersonCreateInput>({
-  firstname: true,
-  lastname: true,
-  BirthDate: true,
-  DateofDeath: true,
-  Gender: true,
-  Hometown: true,
-  ProfilePicture: true,
-  // Add other fields as needed
-});
+  return person;
+};
 
-export { personModel };
-
- */
+module.exports = { createPerson, getAllPersonsinFamilyTree, getPerson };

@@ -34,7 +34,7 @@ PersonsRouter.post("/:familyTreeId", async (req, res) => {
 });
 
 // GET: Get all Persons in a FamilyTree #tested
-PersonsRouter.get("/:familyTreeId", async (req, res) => {
+PersonsRouter.get("/familyTree/:familyTreeId", async (req, res) => {
   const familyTreeId = Number(req.params.familyTreeId);
   try {
     const persons = await PersonsService.getAllPersonsinFamilyTree(
@@ -42,6 +42,21 @@ PersonsRouter.get("/:familyTreeId", async (req, res) => {
     );
     if (!persons) {
       return res.status(404).json({ message: "FamilyObjects not found" });
+    } else {
+      return res.status(200).json(persons);
+    }
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+// GET: Get a specific Person #tested
+PersonsRouter.get("/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    const persons = await PersonsService.getPerson(id);
+    if (!persons) {
+      return res.status(404).json({ message: "FamilyObject not found" });
     } else {
       return res.status(200).json(persons);
     }
