@@ -1,5 +1,6 @@
 FROM git.mylab.th-luebeck.de:4181/vwprg/teaching/docker-archive/node:latest
 
+
 # Create app directory
 WORKDIR /usr/src/app
 
@@ -15,5 +16,7 @@ RUN npm install
 # Bundle app source
 COPY . .
 
+RUN npx prisma generate 
+
 EXPOSE 8080
-CMD [ "npm", "start" ]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]

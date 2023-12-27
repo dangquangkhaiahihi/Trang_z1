@@ -6,7 +6,7 @@ const { body, validationResult } = require("express-validator");
 const familyTreeRouter = express.Router();
 
 // GET: Get a specific FamilyTree #nottested
-familyTreeRouter.get("/:id", async (req, res) => {
+familyTreeRouter.get("/getById/:id", async (req, res) => {
   const id = Number(req.params.id);
   try {
     const familyTree = await familyTreeService.getFamilyTree(id);
@@ -53,7 +53,20 @@ familyTreeRouter.get("/search/:name", async (req, res) => {
   const name = req.params.name;
   try {
     const familyTrees = await familyTreeService.searchFamilyTrees(name);
-    if (!familyTrees) {
+    if (!familyTrees || (familyTrees && familyTrees.length === 0)) {
+      return res.status(404).json({ message: "FamilyTree not found" });
+    } else {
+      return res.status(200).json(familyTrees);
+    }
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+familyTreeRouter.get("/searchAll", async (req, res) => {
+  try {
+    const familyTrees = await familyTreeService.searchAllFamilyTrees();
+    if (!familyTrees || (familyTrees && familyTrees.length === 0)) {
       return res.status(404).json({ message: "FamilyTree not found" });
     } else {
       return res.status(200).json(familyTrees);

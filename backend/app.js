@@ -1,11 +1,13 @@
+/* require("dotenv").config({
+  path: "../.env",
+});
+ */
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
-
-const middlewares = require('./src/middlewares');
-const api = require('./src/api');
+const passport = require("passport");
 
 const indexRouter = require("./routes/index");
 const clockRouter = require("./routes/clock");
@@ -25,6 +27,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use("/persons", persons);
 app.use("/", indexRouter);
 app.use("/users", users);
@@ -33,16 +38,5 @@ app.use("/database", databaseRouter);
 app.use("/familyTree", familyTree);
 app.use("/accessControl", accessControl);
 app.use("/relationsships", relationsships);
-
-app.get('/ahihi', (req, res) => {
-    res.json({
-        message: '🦄🌈✨👋🌎🌍🌏✨🌈🦄'
-    });
-});
-
-app.use('/api/v1', api);
-
-app.use(middlewares.notFound);
-app.use(middlewares.errorHandler);
 
 module.exports = app;

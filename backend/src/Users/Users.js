@@ -66,9 +66,10 @@ const deleteUser = async (userId) => {
 };
 
 const getUser = async (userId) => {
+  const UserID = parseInt(userId);
   return prisma.users.findUnique({
     where: {
-      UserID: parseInt(userId),
+      UserID: UserID, // <-- Import Int from Prisma
     },
   });
 };

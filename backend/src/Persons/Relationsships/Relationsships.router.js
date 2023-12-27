@@ -76,4 +76,21 @@ RelationsshipsRouter.delete("/:relationsshipId", async (req, res) => {
   }
 });
 
+// GET: Get a specific Relationsship #nottested
+RelationsshipsRouter.get("/:personTwoId", async (req, res) => {
+  const personTwoId = Number(req.params.personTwoId);
+  try {
+    const relationsships = await RelationsshipsService.getRelationsship(
+      personTwoId
+    );
+    if (!relationsships) {
+      return res.status(404).json({ message: "Relationsship not found" });
+    } else {
+      return res.status(200).json(relationsships);
+    }
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = RelationsshipsRouter;

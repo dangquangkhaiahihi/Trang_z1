@@ -2,7 +2,6 @@
   <v-row justify="center">
     <v-col cols="6">
       <v-card color="surface" class="pa-6 mx-auto">
-
         <v-card-title class="text-h5">Login</v-card-title>
 
         <v-card-item>
@@ -16,29 +15,33 @@
               <!-- to see other icons just https://fonts.google.com/icons -->
             </v-text-field>
             <v-text-field
-                prepend-inner-icon="mdi-lock"
-                v-model="password"
-                :rules="passwordRules"
-                label="Passwort"
-                type="password"
+              prepend-inner-icon="mdi-lock"
+              v-model="password"
+              :rules="passwordRules"
+              label="Passwort"
+              type="password"
             >
             </v-text-field>
             <v-checkbox v-model="checkbox" label="remember me" />
 
-            <v-btn type="submit" block class="mt-2">LOGIN</v-btn>
+            <v-btn @click="Login" type="submit" block class="mt-2">LOGIN</v-btn>
 
             <v-row class="mt-2">
               <v-col>
-                Kein Konto? <span @click="redirectToRegister" class="text-h6 link">ERSTELL DIR EINES</span>
+                Kein Konto?
+                <span @click="redirectToRegister" class="text-h6 link"
+                  >ERSTELL DIR EINES</span
+                >
               </v-col>
             </v-row>
 
             <v-row class="mt-2">
               <v-col class="text-caption">
-                <router-link to="/forgot-password" class="link">Passwort vergessen?</router-link>
+                <span @click="redirectToRegister" class="text-h6 link"
+                  >Passwort vergessen?</span
+                >
               </v-col>
             </v-row>
-
           </v-form>
         </v-card-item>
       </v-card>
@@ -47,6 +50,8 @@
 </template>
 
 <script>
+import axios from "axios";
+let backendURL = import.meta.env.VITE_BACKEND_URL;
 export default {
   data: () => ({
     email: "",
@@ -58,19 +63,47 @@ export default {
     ],
     passwordRules: [
       (value) => !!value || "Bitte gib ein Passwort ein.",
-      (value) => (value && value.length >= 8) || "Das Passwort muss mindestens 8 Zeichen lang sein.",
+      (value) =>
+        (value && value.length >= 8) ||
+        "Das Passwort muss mindestens 8 Zeichen lang sein.",
     ],
   }),
   methods: {
     redirectToRegister() {
-      this.$router.push('/register');
+      const token = localStorage.getItem("token");
+      axios
+        .get(`${backendURL}/users/yes/authenticate`, {
+          headers: {
+            Authorization: token,
+          },
+        })
+        .then((response) => {
+          console.log(response.data);
+          this.sqlData = response.data;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
+    Login() {
+      axios
+        .post(`${backendURL}/users/login`, {
+          Email: this.email,
+          Password: this.password,
+        })
+        .then((response) => {
+          console.log(response);
+          localStorage.setItem("token", response.data.token);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
     },
   },
 };
 </script>
 
 <style>
-
 .link {
   cursor: pointer;
   color: hotpink;

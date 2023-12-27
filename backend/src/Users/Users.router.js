@@ -1,8 +1,13 @@
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 const UsersService = require("./Users");
-
+const jwt = require("jsonwebtoken");
+const passport = require("passport");
 const Usersrouter = express.Router();
+
+Usersrouter.use(passport.initialize());
+
+require("../utils/passport-config");
 
 // GET: Get all users #tested
 Usersrouter.get("/", async (req, res) => {
@@ -29,6 +34,27 @@ Usersrouter.get("/:id", async (req, res) => {
   }
 });
 
+Usersrouter.get(
+  "/yes/authenticate",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    try {
+      // Your logic here
+
+      res.status(200).send({
+        success: true,
+        user: {
+          id: req.user.UserID,
+          email: req.user.Email,
+        },
+      });
+    } catch (error) {
+      console.error("Error in /yes/authenticate:", error);
+      res.status(500).json({ success: false, error: "Internal Server Error" });
+    }
+  }
+);
+
 // POST: Login a user #tested have to implement jwt
 Usersrouter.post("/login", async (req, res) => {
   try {
@@ -37,7 +63,17 @@ Usersrouter.post("/login", async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     } else {
-      return res.status(200).json(user);
+      const payload = {
+        id: user.UserID,
+        email: user.Email,
+      };
+      const secretOrPrivateKey = process.env.JWT_SECRET;
+      const token = jwt.sign(payload, secretOrPrivateKey, { expiresIn: "1d" });
+      return res.status(200).send({
+        success: true,
+        message: "Login successful",
+        token: "Bearer " + token,
+      });
     }
   } catch (err) {
     return res.status(500).json({ message: err.message });

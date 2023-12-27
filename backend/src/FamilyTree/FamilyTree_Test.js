@@ -13,20 +13,10 @@ const getFamilyTree = async (id) => {
 const searchFamilyTrees = async (name) => {
   return prisma.familyTree.findMany({
     where: {
-      Name: {
-        contains : name.toLowerCase()
-      }
+      Name: name,
     },
     orderBy: {
-      CreationDate: "desc",
-    },
-  });
-};
-
-const searchAllFamilyTrees = async () => {
-  return prisma.familyTree.findMany({
-    orderBy: {
-      CreationDate: "desc",
+      CreationDate: "asc",
     },
   });
 };
@@ -138,5 +128,4 @@ module.exports = {
   setNodePosition,
   getNodePosition,
   deleteNodePosition,
-  searchAllFamilyTrees,
 };
