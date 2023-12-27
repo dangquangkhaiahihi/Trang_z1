@@ -94,6 +94,8 @@ export default {
         .then((response) => {
           console.log(response);
           localStorage.setItem("token", response.data.token);
+          localStorage.setItem("user", JSON.stringify(response.data.user));
+          this.$router.push("/");
         })
         .catch((error) => {
           console.log(error);

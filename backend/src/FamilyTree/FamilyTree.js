@@ -15,7 +15,8 @@ const searchFamilyTrees = async (name) => {
     where: {
       Name: {
         contains : name.toLowerCase()
-      }
+      },
+      IsPublic: true,
     },
     orderBy: {
       CreationDate: "desc",
@@ -25,6 +26,9 @@ const searchFamilyTrees = async (name) => {
 
 const searchAllFamilyTrees = async () => {
   return prisma.familyTree.findMany({
+    where: {
+      IsPublic: true,
+    },
     orderBy: {
       CreationDate: "desc",
     },

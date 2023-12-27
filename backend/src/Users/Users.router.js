@@ -66,6 +66,7 @@ Usersrouter.post("/login", async (req, res) => {
       const payload = {
         id: user.UserID,
         email: user.Email,
+        userName: user.Username
       };
       const secretOrPrivateKey = process.env.JWT_SECRET;
       const token = jwt.sign(payload, secretOrPrivateKey, { expiresIn: "1d" });
@@ -73,6 +74,7 @@ Usersrouter.post("/login", async (req, res) => {
         success: true,
         message: "Login successful",
         token: "Bearer " + token,
+        user: payload
       });
     }
   } catch (err) {

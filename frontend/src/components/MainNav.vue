@@ -1,9 +1,40 @@
 <script>
 import { ref, onMounted, getCurrentInstance, transformVNodeArgs } from "vue";
 import { useTheme } from "vuetify/lib/framework";
+import { authenStore } from '../store/authen.store'
 
 export default {
   name: "MainNav",
+
+  watch: {
+    $route(to, from) {
+      console.log("from", from)
+      console.log("to", to)
+      const token = localStorage.getItem("token");
+      if(to.path === "/login" && token) {
+        this.$router.push(this.Home.path);
+      }
+      this.checkAuthen();
+    },
+  },
+
+  methods: {
+    checkAuthen() {
+      const token = localStorage.getItem("token");
+      if ( !token ) {
+        authenStore.setIsLoggedIn(false);
+        authenStore.setUser(null);
+      } else {
+        authenStore.setIsLoggedIn(true);
+        authenStore.setUser(JSON.parse(localStorage.getItem("user")));
+      }
+    },
+    logout () {
+      authenStore.setIsLoggedIn(false);
+      authenStore.setUser(null);
+      localStorage.clear();
+    },
+  },
 
   setup() {
     const instance = getCurrentInstance();
@@ -43,6 +74,7 @@ export default {
         name: "Login",
         path: "/login",
       },
+      authenStore
     };
   },
 };
@@ -63,7 +95,14 @@ export default {
         ></v-icon>
       </v-btn>
 
-      <v-btn variant="outlined" :to="Login.path">{{ Login.name }}</v-btn>
+      <div v-if="authenStore.loggedIn" style="display: flex; gap: 10px; align-items: center">
+        <span>Hello {{authenStore.user.userName}}</span>
+        <v-btn variant="outlined" @click="logout" >Logout</v-btn>
+      </div>
+      <div v-else>
+        <v-btn variant="outlined" :to="Login.path">{{ Login.name }}</v-btn>
+      </div>
+
     </v-app-bar>
   </div>
 </template>

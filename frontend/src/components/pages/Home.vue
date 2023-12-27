@@ -1,9 +1,14 @@
 <script>
 import ApiServices from "../../service/services";
 import DisplayFamilyTree from "@/components/DisplayFamilyTree.vue";
-import { checkAutho } from "../../service/checkAutho";
+import {authenStore} from "@/store/authen.store";
 
 export default {
+  computed: {
+    authenStore() {
+      return authenStore
+    }
+  },
   components: {
     DisplayFamilyTree,
   },
@@ -11,8 +16,6 @@ export default {
     reveal: false,
     reveal1: false,
     reveal2: false,
-    user: null,
-    loading: false,
 
     // Control
     isOpenCreateDialog: false,
@@ -31,16 +34,6 @@ export default {
     descRules: [(v) => !!v || "Description is required"],
     ispublic: false,
   }),
-  async mounted() {
-    //how to add Authorisation
-    try {
-      const { loading, user } = await checkAutho();
-      this.loading = loading;
-      this.user = user;
-    } catch (error) {
-      console.error(error);
-    }
-  },
   methods: {
     SuchenNachPerson() {
       this.$router.push("/SuchPerson");
@@ -85,7 +78,7 @@ export default {
       if (valid) {
         ApiServices.createFamilyTree({
           name: this.name,
-          userID: 1,
+          userID: authenStore.user?.id,
           description: this.desc,
           ispublic: this.ispublic,
         })
@@ -96,6 +89,9 @@ export default {
           })
           .catch((err) => {
             console.log(err);
+            if(err.response.status == '401') {
+              // TO DO : Show noti or something
+            }
           });
       }
     },
@@ -114,7 +110,6 @@ export default {
       console.log("FamilyTreeID", FamilyTreeID);
       ApiServices.getFamilyTreeById(FamilyTreeID)
         .then((res) => {
-          console.log("fffffffffffffff", res);
           if (!res.data) return;
           this.detailSelected = res.data;
           console.log("detailSelected", this.detailSelected);
@@ -130,15 +125,7 @@ export default {
 <!-- Text mittig setzen-Zeile 27: class="d-flex align-center text-center bg-shades-white"  -->
 <template>
   <div>
-    <v-progress-circular
-      v-if="loading"
-      indeterminate
-      ::size="75"
-      :width="8"
-    ></v-progress-circular>
-    <!-- Progressbar falls den User authentifizieren lange lädt -->
-    <v-row no-gutters v-if="user">
-      <!-- Wenn der User authentifiziert ist, wird der Inhalt angezeigt kannst mit v-if="!user" auch etwas anzeigen wenn der User nicht angemeldet ist -->
+    <v-row no-gutters>
       <v-col cols="12" class="search-tree-wrapper">
         <v-container>
           <div
@@ -177,25 +164,34 @@ export default {
     <v-dialog v-model="isOpenCreateDialog" max-width="50%">
       <v-card>
         <v-card-title> Create Family Tree </v-card-title>
-        <v-sheet width="300" class="mx-auto">
-          <v-form ref="form">
-            <v-text-field
-              v-model="name"
-              :rules="nameRules"
-              label="Name"
-              required
-            ></v-text-field>
 
-            <v-text-field
-              v-model="desc"
-              :rules="descRules"
-              label="Description"
-              required
-            ></v-text-field>
+        <div v-if="authenStore.loggedIn">
+          <v-sheet width="300" class="mx-auto">
+            <v-form ref="form">
+              <v-text-field
+                  v-model="name"
+                  :rules="nameRules"
+                  label="Name"
+                  required
+              ></v-text-field>
 
-            <v-checkbox v-model="ispublic" label="Public"></v-checkbox>
-          </v-form>
-        </v-sheet>
+              <v-text-field
+                  v-model="desc"
+                  :rules="descRules"
+                  label="Description"
+                  required
+              ></v-text-field>
+
+              <v-checkbox v-model="ispublic" label="Public"></v-checkbox>
+            </v-form>
+          </v-sheet>
+        </div>
+        <div v-else>
+          <v-sheet width="300" class="mx-auto">
+            You have to log in to Create Family Tree
+          </v-sheet>
+        </div>
+
         <v-card-actions style="display: flex; justify-content: end">
           <v-btn @click="closeDialog">Close</v-btn>
           <v-btn variant="elevated" @click="createFamilyTree">Create</v-btn>
@@ -203,17 +199,18 @@ export default {
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="isOpenDetailDialog" max-width="100%">
-      <v-card>
+    <v-dialog v-model="isOpenDetailDialog" max-width="100%" max-height="80vh">
+      <v-card height="80vh">
         <v-card-title> Family Tree : {{ detailSelected.Name }} </v-card-title>
 
-        <v-card-item style="min-height: 50vh">
+        <v-card-item>
           <v-row no-gutters>
             <v-col cols="6" class="description">
               Description : {{ detailSelected.Describtion }}
             </v-col>
-            <v-col cols="6" class="show-nodes">
-              <DisplayFamilyTree FamilyTreeId="5" DisplaySize="50vh" />
+            <v-col cols="6" :class="{ 'show-nodes': authenStore.loggedIn, 'hide-nodes': !authenStore.loggedIn }">
+              <div class="hide-nodes-overlay" style="">You have to login to see Family Tree</div>
+              <DisplayFamilyTree :FamilyTreeId="detailSelected.FamilyTreeID" />
             </v-col>
           </v-row>
         </v-card-item>
@@ -453,15 +450,34 @@ export default {
   border-radius: 30px;
 }
 
-.detail-tree {
-  display: flex;
-  .description {
-    max-width: 50%;
-    text-align: center;
-  }
-  .show-nodes {
-    max-width: 50%;
-  }
+.description {
+  text-align: left;
+}
+.show-nodes {
+  max-width: 50%;
+  overflow: auto;
+  height: 64vh;
+}
+
+.show-nodes .hide-nodes-overlay {
+  display: none;
+}
+
+.hide-nodes {
+  max-height: 65vh;
+  position: relative;
+}
+.hide-nodes .hide-nodes-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background: rgb(226, 210, 196);
+  border-radius: 5px;
+  z-index: 999;
+  text-align: center;
+  padding: 30%;
 }
 
 @media (max-width: 960px) {

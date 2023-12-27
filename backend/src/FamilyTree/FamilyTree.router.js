@@ -2,6 +2,7 @@ const express = require("express");
 const familyTreeService = require("./FamilyTree");
 const { PrismaClient } = require("@prisma/client");
 const { body, validationResult } = require("express-validator");
+const passport = require("passport");
 
 const familyTreeRouter = express.Router();
 
@@ -27,27 +28,30 @@ familyTreeRouter.get("/getById/:id", async (req, res) => {
   "description": "this is a crazy thing",
   "isPublic": false
 } */
-familyTreeRouter.post("/", async (req, res) => {
-  const name = req.body.name;
-  const userID = Number(req.body.userID);
-  const description = req.body.description;
-  const ispublic = Boolean(req.body.ispublic);
-  try {
-    const familyTree = await familyTreeService.createFamilyTree(
-      name,
-      userID,
-      description,
-      ispublic
-    );
-    if (!familyTree) {
-      return res.status(404).json({ message: "FamilyTree not found" });
-    } else {
-      return res.status(200).json(familyTree);
+familyTreeRouter.post("/",
+    passport.authenticate("jwt", { session: false }),
+    async (req, res) => {
+      const name = req.body.name;
+      const userID = Number(req.body.userID);
+      const description = req.body.description;
+      const ispublic = Boolean(req.body.ispublic);
+      try {
+        const familyTree = await familyTreeService.createFamilyTree(
+          name,
+          userID,
+          description,
+          ispublic
+        );
+        if (!familyTree) {
+          return res.status(404).json({ message: "FamilyTree not found" });
+        } else {
+          return res.status(200).json(familyTree);
+        }
+      } catch (err) {
+        return res.status(500).json({ message: err.message });
+      }
     }
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-});
+);
 
 familyTreeRouter.get("/search/:name", async (req, res) => {
   const name = req.params.name;
