@@ -93,6 +93,109 @@ const getAllAccessAccesTypeEdit = async (familyTreeID) => {
   return accessControl;
 };
 
+const requestJoin = async (familyTreeID, userID) => {
+  // Create the access control
+  const accessID = `${userID}_${familyTreeID}`;
+  const createdAccessControl = await prisma.accessControl.create({
+    data: {
+      Users: {
+        connect: {
+          UserID: parseInt(userID),
+        },
+      },
+      FamilyTree: {
+        connect: {
+          FamilyTreeID: parseInt(familyTreeID),
+        },
+      },
+      AccessType: 'view',
+      AccessID: accessID,
+    },
+  });
+
+  // Return either the created access control
+  return createdAccessControl;
+};
+
+const acceptRequest = async (accessID) => {
+  try {
+    await prisma.accessControl.update({
+      where: {
+        AccessID: accessID,
+      },
+      data: {
+        AccessType: "edit",
+      },
+    });
+  } catch (err)  {
+    throw err;
+  }
+};
+
+const rejectRequest = async (accessID) => {
+  try {
+    await prisma.accessControl.delete({
+      where: {
+        AccessID: accessID,
+      },
+    });
+  } catch (err)  {
+    throw err;
+  }
+};
+
+async function findRequestByUserId(userId, page, itemsPerPage) {
+  try {
+    const listTreeOfUser = await prisma.familyTree.findMany({
+      where: {
+        OwnerUserID: userId,
+      },
+    });
+
+    const reqList = [];
+    for (const item of listTreeOfUser) {
+      const req = await prisma.accessControl.findMany({
+        where: {
+          FamilyTreeID: item.FamilyTreeID,
+          AccessType: 'view'
+        },
+        include: {
+          FamilyTree: {
+            select: {
+              Name: true,
+              Describtion: true,
+            }
+          },
+          Users: {
+            select: {
+              Email: true,
+              Username: true
+            }
+          }
+        },
+      });
+
+      if (req && req.length > 0) {
+        for (const item of req) {
+          const tempItem = {...item,
+            treeName: item.FamilyTree.Name,
+            treeDesc: item.FamilyTree.Describtion,
+            reqUserName: item.Users.Username,
+            reqUserEmail: item.Users.Email,
+          }
+          const { FamilyTree, Users, ...newData } = tempItem;
+
+          reqList.push(newData)
+        }
+      }
+    }
+    return reqList
+  } catch (error) {
+    console.error('Error finding trees:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   giveAccess,
   changeAccess,
@@ -100,4 +203,8 @@ module.exports = {
   getAllAccess,
   getAllAccessAccesTypeEdit,
   getAllEditFamilyTree,
+  requestJoin,
+  findRequestByUserId,
+  acceptRequest,
+  rejectRequest
 };

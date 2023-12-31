@@ -8,6 +8,7 @@ import Register from "@/components/pages/Register.vue";
 import Profile from "@/components/pages/Profile.vue";
 import SuchPerson from "@/components/pages/SuchPerson.vue";
 import Chat from "@/components/pages/Chat.vue";
+import Requests from "@/components/pages/Requests.vue";
 import chooseFamilyTree from "@/components/pages/chooseFamilyTree.vue";
 
 const routes = [
@@ -62,6 +63,11 @@ const routes = [
     path: "/chooseFamilyTree",
     name: "chooseFamilyTree",
     component: chooseFamilyTree,
+  },
+  {
+    path: "/requests",
+    name: "Requests",
+    component: Requests,
   },
 ];
 

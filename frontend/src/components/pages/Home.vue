@@ -24,6 +24,9 @@ export default {
     // Control
     isOpenCreateDialog: false,
     isOpenDetailDialog: false,
+    isOpenRequestDialog: false,
+    isOpenErrorDialog: false,
+    errorMessage: "",
     familyTreeId: "",
 
     // Search
@@ -58,9 +61,22 @@ export default {
     openDetailDialog() {
       this.isOpenDetailDialog = true;
     },
+    openRequestDialog(FamilyTreeID) {
+      this.familyTreeId = FamilyTreeID;
+      this.isOpenRequestDialog = true;
+    },
+    closeErrorDialog() {
+      this.errorMessage = "";
+      this.isOpenErrorDialog = false;
+    },
     closeDialog() {
       this.isOpenCreateDialog = false;
       this.isOpenDetailDialog = false;
+      this.isOpenRequestDialog = false;
+    },
+    openErrorDialog(mess) {
+      this.errorMessage = mess;
+      this.isOpenErrorDialog = true;
     },
     searchFamilyTree() {
       if (this.keyword) {
@@ -114,12 +130,6 @@ export default {
 
       if (valid) alert("Form is valid");
     },
-    reset() {
-      this.$refs.form.reset();
-    },
-    resetValidation() {
-      this.$refs.form.resetValidation();
-    },
     findUniqueTree(FamilyTreeID) {
       console.log("FamilyTreeID", FamilyTreeID);
       ApiServices.getFamilyTreeById(FamilyTreeID)
@@ -133,6 +143,22 @@ export default {
           console.log(err);
         });
     },
+    requestJoinTree() {
+      ApiServices.requestJoinTree({
+        "familyTreeId": this.familyTreeId,
+        "userId": authenStore.user?.id
+      })
+          .then((res) => {
+            console.log("resssss", res)
+          })
+          .catch((err) => {
+            console.log(err);
+            this.openErrorDialog(err.response.data.message);
+          })
+          .finally(() => {
+            this.closeDialog();
+          });
+    }
   },
 };
 </script>
@@ -169,7 +195,10 @@ export default {
                 class="search-tree-item"
               >
                 <h4>Tree Name: {{ tree.Name }}</h4>
-                <div class="button-wrap">
+                <div class="buttons-wrap">
+                  <button v-if="authenStore.user?.id !== tree.OwnerUserID" @click="openRequestDialog(tree.FamilyTreeID)">
+                    Join
+                  </button>
                   <button @click="findUniqueTree(tree.FamilyTreeID)">
                     View
                   </button>
@@ -250,6 +279,47 @@ export default {
         </v-card-item>
         <v-card-actions style="display: flex; justify-content: end">
           <v-btn @click="closeDialog">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="isOpenRequestDialog" max-width="50%">
+      <v-card>
+        <v-card-title> Join Family Tree </v-card-title>
+
+        <div v-if="authenStore.loggedIn">
+          <v-sheet width="300" class="mx-auto">
+            <p>Do you want to join this FamilyTree?</p>
+          </v-sheet>
+        </div>
+        <div v-else>
+          <v-sheet width="300" class="mx-auto">
+            You have to log in to Request to join Family Tree
+          </v-sheet>
+        </div>
+
+        <v-card-actions style="display: flex; justify-content: end">
+          <div v-if="authenStore.loggedIn">
+            <v-btn @click="closeDialog">No</v-btn>
+            <v-btn variant="elevated" @click="requestJoinTree">Yes</v-btn>
+          </div>
+          <div v-else>
+            <v-btn @click="closeDialog">Close</v-btn>
+          </div>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="isOpenErrorDialog" max-width="50%">
+      <v-card>
+        <v-card-title> Error </v-card-title>
+
+        <v-sheet width="300" class="mx-auto">
+          <p>{{this.errorMessage}}</p>
+        </v-sheet>
+
+        <v-card-actions style="display: flex; justify-content: end">
+          <v-btn @click="closeErrorDialog">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -460,6 +530,13 @@ export default {
   padding: 20px 0;
 }
 
+.search-tree-item .buttons-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
 .search-tree-item.create {
   background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='20' ry='20' stroke='grey' stroke-width='4' stroke-dasharray='14' stroke-dashoffset='0' stroke-linecap='butt'/%3e%3c/svg%3e");
   border-radius: 20px;
@@ -478,7 +555,6 @@ export default {
 
 .search-tree-item button {
   width: 50%;
-
   background-color: #a9b5a9;
   padding: 5px 20px;
   border: solid #566156 2px;

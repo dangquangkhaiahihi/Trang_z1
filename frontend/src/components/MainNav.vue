@@ -70,6 +70,10 @@ export default {
         name: "Stammbaum",
         path: "/choosefamilytree",
       },
+      Requests: {
+        name: "Join Tree Request",
+        path: "/requests",
+      },
       Login: {
         name: "Login",
         path: "/login",
@@ -87,6 +91,7 @@ export default {
       <v-tabs class="navbar">
         <v-tab :to="About.path">{{ About.name }} </v-tab>
         <v-tab :to="Stammbaum.path">{{ Stammbaum.name }} </v-tab>
+        <v-tab :to="Requests.path" v-if="authenStore.loggedIn">{{ Requests.name }} </v-tab>
       </v-tabs>
       <v-spacer></v-spacer>
       <v-btn icon @click="changeTheme">
