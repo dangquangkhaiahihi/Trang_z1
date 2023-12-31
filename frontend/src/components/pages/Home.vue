@@ -1,13 +1,14 @@
 <script>
 import ApiServices from "../../service/services";
 import DisplayFamilyTree from "@/components/DisplayFamilyTree.vue";
-import {authenStore} from "@/store/authen.store";
+import { checkAutho } from "../../service/checkAutho";
+import { authenStore } from "@/store/authen.store";
 
 export default {
   computed: {
     authenStore() {
-      return authenStore
-    }
+      return authenStore;
+    },
   },
   components: {
     DisplayFamilyTree,
@@ -16,6 +17,9 @@ export default {
     reveal: false,
     reveal1: false,
     reveal2: false,
+    user: null,
+    loading: false,
+    shouldReloadFamilyTree: false,
 
     // Control
     isOpenCreateDialog: false,
@@ -34,6 +38,16 @@ export default {
     descRules: [(v) => !!v || "Description is required"],
     ispublic: false,
   }),
+  async mounted() {
+    //how to add Authorisation
+    try {
+      const { loading, user } = await checkAutho();
+      this.loading = loading;
+      this.user = user;
+    } catch (error) {
+      console.error(error);
+    }
+  },
   methods: {
     SuchenNachPerson() {
       this.$router.push("/SuchPerson");
@@ -89,7 +103,7 @@ export default {
           })
           .catch((err) => {
             console.log(err);
-            if(err.response.status == '401') {
+            if (err.response.status == "401") {
               // TO DO : Show noti or something
             }
           });
@@ -125,6 +139,12 @@ export default {
 <!-- Text mittig setzen-Zeile 27: class="d-flex align-center text-center bg-shades-white"  -->
 <template>
   <div>
+    <v-progress-circular
+      v-if="loading"
+      indeterminate
+      ::size="75"
+      :width="8"
+    ></v-progress-circular>
     <v-row no-gutters>
       <v-col cols="12" class="search-tree-wrapper">
         <v-container>
@@ -169,17 +189,17 @@ export default {
           <v-sheet width="300" class="mx-auto">
             <v-form ref="form">
               <v-text-field
-                  v-model="name"
-                  :rules="nameRules"
-                  label="Name"
-                  required
+                v-model="name"
+                :rules="nameRules"
+                label="Name"
+                required
               ></v-text-field>
 
               <v-text-field
-                  v-model="desc"
-                  :rules="descRules"
-                  label="Description"
-                  required
+                v-model="desc"
+                :rules="descRules"
+                label="Description"
+                required
               ></v-text-field>
 
               <v-checkbox v-model="ispublic" label="Public"></v-checkbox>
@@ -208,9 +228,23 @@ export default {
             <v-col cols="6" class="description">
               Description : {{ detailSelected.Describtion }}
             </v-col>
-            <v-col cols="6" :class="{ 'show-nodes': authenStore.loggedIn, 'hide-nodes': !authenStore.loggedIn }">
-              <div class="hide-nodes-overlay" style="">You have to login to see Family Tree</div>
-              <DisplayFamilyTree :FamilyTreeId="detailSelected.FamilyTreeID" />
+            <v-col
+              cols="6"
+              :class="{
+                'show-nodes': authenStore.loggedIn,
+                'hide-nodes': !authenStore.loggedIn,
+              }"
+            >
+              <div class="hide-nodes-overlay" style="">
+                You have to login to see Family Tree
+              </div>
+              <div style="height: 100vh">
+                <DisplayFamilyTree
+                  :FamilyTreeId="detailSelected.FamilyTreeID"
+                  DisplaySize="60vh"
+                  :ReloadFamilyTree="this.shouldReloadFamilyTree"
+                />
+              </div>
             </v-col>
           </v-row>
         </v-card-item>
@@ -225,15 +259,16 @@ export default {
 
   <v-container>
     <v-row align="center" justify="center">
-      <v-card class="mx-auto" max-width="344" variant="outlined">
+      <v-card class="mx-auto rounded-xl" max-width="344" variant="outlined">
         <v-card-item>
           <div>
             <div class="text-overline mb-1">Hinweis für Sie</div>
-            <div class="text-h4 mb-1">Step 1</div>
+            <div class="text-h4 mb-4">Step 1</div>
             <div class="text-caption">
-              I'm a thing. But, like most politicians, he promised more than he
-              could deliver. You won't have time for sleeping, soldier, not with
-              all the bed making you'll be doing.
+              Werden Sie einer unserer Benutzer, indem Sie auf unserer Website
+              ein Konto erstellen, um unsere umfangreichen Ressourcen an
+              Stammbäumen anzuzeigen. Sie werden überrascht sein, was Sie finden
+              können!
             </div>
           </div>
         </v-card-item>
@@ -246,9 +281,9 @@ export default {
           <v-card v-if="reveal" class="v-card--reveal" style="height: 100%">
             <v-card-text class="pb-0">
               <p>
-                late 16th century (as a noun denoting a place where alms were
-                distributed): from medieval Latin eleemosynarius, from late
-                Latin eleemosyna ‘alms’, from Greek eleēmosunē ‘compassion’
+                Um ein Konto zu erstellen, benötigen Sie eine E-Mail-Adresse,
+                ein sicheres Passwort und vor allem die Motivation, Ihren
+                Stammbaum herauszufinden
               </p>
             </v-card-text>
             <v-card-actions class="pt-0">
@@ -258,15 +293,16 @@ export default {
         </v-expand-transition>
       </v-card>
 
-      <v-card class="mx-auto" max-width="344" variant="outlined">
+      <v-card class="mx-auto rounded-xl" max-width="344" variant="outlined">
         <v-card-item>
           <div>
             <div class="text-overline mb-1">Hinweis für Sie</div>
-            <div class="text-h4 mb-1">Step 2</div>
+            <div class="text-h4 mb-4">Step 2</div>
             <div class="text-caption">
-              I'm a thing. But, like most politicians, he promised more than he
-              could deliver. You won't have time for sleeping, soldier, not with
-              all the bed making you'll be doing.
+              Nachdem Sie ein Konto erstellt haben, können Sie mit unserer
+              vertrauenswürdigen Suchmethode die Informationen anderer
+              Stammbäume einsehen. Wenn Ihr Stammbaum nicht verfügbar ist,
+              können Sie Ihren eigenen erstellen.
             </div>
           </div>
         </v-card-item>
@@ -279,9 +315,9 @@ export default {
           <v-card v-if="reveal1" class="v-card--reveal" style="height: 100%">
             <v-card-text class="pb-0">
               <p>
-                late 16th century (as a noun denoting a place where alms were
-                distributed): from medieval Latin eleemosynarius, from late
-                Latin eleemosyna ‘alms’, from Greek eleēmosunē ‘compassion’
+                Mit nur einem Klick auf die Suchschaltfläche werden Sie von
+                unseren passenden Ergebnissen überrascht sein. Gerne können Sie
+                mit dem Add-Icon Ihren eigenen Stammbaum erstellen
               </p>
             </v-card-text>
             <v-card-actions class="pt-0">
@@ -291,15 +327,16 @@ export default {
         </v-expand-transition>
       </v-card>
 
-      <v-card class="mx-auto" max-width="344" variant="outlined">
+      <v-card class="mx-auto rounded-xl" max-width="344" variant="outlined">
         <v-card-item>
           <div>
             <div class="text-overline mb-1">Hinweis für Sie</div>
-            <div class="text-h4 mb-1">Step 3</div>
+            <div class="text-h4 mb-4">Step 3</div>
             <div class="text-caption">
-              I'm a thing. But, like most politicians, he promised more than he
-              could deliver. You won't have time for sleeping, soldier, not with
-              all the bed making you'll be doing.
+              Auf unserer Website haben Sie jederzeit die Möglichkeit, die
+              Informationen Ihres eigenen Stammbaums anzupassen. Darüber hinaus
+              können Sie auch die Beziehungen zwischen Familienmitgliedern
+              anzeigen
             </div>
           </div>
         </v-card-item>
@@ -312,9 +349,8 @@ export default {
           <v-card v-if="reveal2" class="v-card--reveal" style="height: 100%">
             <v-card-text class="pb-0">
               <p>
-                late 16th century (as a noun denoting a place where alms were
-                distributed): from medieval Latin eleemosynarius, from late
-                Latin eleemosyna ‘alms’, from Greek eleēmosunē ‘compassion’
+                Dazu müssen Sie Ihre Profilseite oder Ihre
+                Stammbauminformationen aufrufen. Viel Spaß!!
               </p>
             </v-card-text>
             <v-card-actions class="pt-0">
@@ -340,10 +376,10 @@ export default {
 .search-tree-wrapper {
   /* background-image: url(/images/Bild1.jpg); */
   background: linear-gradient(
-      rgba(255, 255, 255, 0.6),
-      rgba(255, 255, 255, 0.6)
+      rgba(255, 255, 255, 0.8),
+      rgba(255, 255, 255, 0.8)
     ),
-    url(/images/Bild1.jpg);
+    url(https://images.pexels.com/photos/3875160/pexels-photo-3875160.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2);
   background-size: cover;
   background-position: center;
   position: relative;
@@ -365,16 +401,16 @@ export default {
 
 .search-tree-content .search-box input {
   width: 70%;
-  border: solid 2px gray;
+  border: solid 2px #566156;
   border-radius: 30px;
-  background: white;
+
   padding: 10px 20px;
 }
 
 .search-tree-content .search-box button {
-  border: solid 2px gray;
+  border: solid 2px #566156;
   border-radius: 30px;
-  background: white;
+
   padding: 10px 20px;
 }
 
@@ -405,19 +441,18 @@ export default {
 
 /* Handle */
 ::-webkit-scrollbar-thumb {
-  background: #888; /* Color of the thumb */
+  background: #a9b5a9; /* Color of the thumb */
 }
 
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-  background: #555; /* Color of the thumb on hover */
+  background: #566156; /* Color of the thumb on hover */
 }
 .search-tree-item {
   width: 200px;
   height: 180px;
   border-radius: 20px;
-  border: solid 2px gray;
-  background-color: white;
+  border: solid 2px #566156;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -426,7 +461,7 @@ export default {
 }
 
 .search-tree-item.create {
-  background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='20' ry='20' stroke='black' stroke-width='5' stroke-dasharray='14' stroke-dashoffset='0' stroke-linecap='butt'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='20' ry='20' stroke='grey' stroke-width='4' stroke-dasharray='14' stroke-dashoffset='0' stroke-linecap='butt'/%3e%3c/svg%3e");
   border-radius: 20px;
   border: none;
   cursor: pointer;
@@ -443,10 +478,10 @@ export default {
 
 .search-tree-item button {
   width: 50%;
-  color: white;
-  background-color: #888;
+
+  background-color: #a9b5a9;
   padding: 5px 20px;
-  border: solid #555 2px;
+  border: solid #566156 2px;
   border-radius: 30px;
 }
 

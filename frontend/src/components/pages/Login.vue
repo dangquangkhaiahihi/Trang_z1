@@ -72,34 +72,34 @@ export default {
     redirectToRegister() {
       const token = localStorage.getItem("token");
       axios
-        .get(`${backendURL}/users/yes/authenticate`, {
-          headers: {
-            Authorization: token,
-          },
-        })
-        .then((response) => {
-          console.log(response.data);
-          this.sqlData = response.data;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
+          .get(`${backendURL}/users/yes/authenticate`, {
+            headers: {
+              Authorization: token,
+            },
+          })
+          .then((response) => {
+            console.log(response.data);
+            this.sqlData = response.data;
+          })
+          .catch((error) => {
+            console.log(error);
+          });
     },
     Login() {
       axios
-        .post(`${backendURL}/users/login`, {
-          Email: this.email,
-          Password: this.password,
-        })
-        .then((response) => {
-          console.log(response);
-          localStorage.setItem("token", response.data.token);
-          localStorage.setItem("user", JSON.stringify(response.data.user));
-          this.$router.push("/");
-        })
-        .catch((error) => {
-          console.log(error);
-        });
+          .post(`${backendURL}/users/login`, {
+            Email: this.email,
+            Password: this.password,
+          })
+          .then((response) => {
+            console.log(response);
+            localStorage.setItem("token", response.data.token);
+            localStorage.setItem("user", JSON.stringify(response.data.user));
+            this.$router.push("/");
+          })
+          .catch((error) => {
+            console.log(error);
+          });
     },
   },
 };

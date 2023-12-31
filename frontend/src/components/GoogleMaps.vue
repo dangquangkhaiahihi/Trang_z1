@@ -4,6 +4,7 @@
     style="width: 1200px; height: 850px"
     :center="center"
     :zoom="15"
+    :api-promise="apiPromise"
   >
     <Marker :options="{ position: center }" />
   </GoogleMap>
@@ -20,6 +21,11 @@ export default defineComponent({
     const center = { lat: 40.689247, lng: -74.044502 };
 
     return { center };
+  },
+  data() {
+    return {
+      apiPromise: null,
+    };
   },
 });
 </script>

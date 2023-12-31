@@ -35,24 +35,24 @@ Usersrouter.get("/:id", async (req, res) => {
 });
 
 Usersrouter.get(
-  "/yes/authenticate",
-  passport.authenticate("jwt", { session: false }),
-  (req, res) => {
-    try {
-      // Your logic here
+    "/yes/authenticate",
+    passport.authenticate("jwt", { session: false }),
+    (req, res) => {
+      try {
+        // Your logic here
 
-      res.status(200).send({
-        success: true,
-        user: {
-          id: req.user.UserID,
-          email: req.user.Email,
-        },
-      });
-    } catch (error) {
-      console.error("Error in /yes/authenticate:", error);
-      res.status(500).json({ success: false, error: "Internal Server Error" });
+        res.status(200).send({
+          success: true,
+          user: {
+            id: req.user.UserID,
+            email: req.user.Email,
+          },
+        });
+      } catch (error) {
+        console.error("Error in /yes/authenticate:", error);
+        res.status(500).json({ success: false, error: "Internal Server Error" });
+      }
     }
-  }
 );
 
 // POST: Login a user #tested have to implement jwt
@@ -86,7 +86,8 @@ Usersrouter.post("/login", async (req, res) => {
 Usersrouter.post("/", async (req, res) => {
   try {
     // Extract data from request body
-    /*user data example{
+    /*user data example
+    {
   "Email": "user@example.com",
   "Password": "securePassword",
   "UserName": "john_doe",
@@ -117,9 +118,9 @@ Usersrouter.put("/:id", async (req, res) => {
       const updateUser = req.body;
       const password = updateUser.Password;
       const updatedUser = await UsersService.updateUser(
-        userId,
-        updateUser,
-        password
+          userId,
+          updateUser,
+          password
       );
       return res.status(200).json(updatedUser);
     }

@@ -2,7 +2,7 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
-const giveAccess = async (familyTreeID, userID, accessLevel) => {
+const giveAccess = async (familyTreeID, userID, accessType) => {
   // Create the access control
   const accessID = `${userID}_${familyTreeID}`;
   const createdAccessControl = await prisma.accessControl.create({
@@ -17,7 +17,7 @@ const giveAccess = async (familyTreeID, userID, accessLevel) => {
           FamilyTreeID: parseInt(familyTreeID),
         },
       },
-      AccessType: accessLevel,
+      AccessType: accessType,
       AccessID: accessID,
     },
   });
@@ -26,15 +26,15 @@ const giveAccess = async (familyTreeID, userID, accessLevel) => {
   return createdAccessControl;
 };
 
-const changeAccess = async (familyTreeID, userID, accessLevel) => {
+const changeAccess = async (familyTreeID, userID, accessType) => {
   // Create the access control
   const changedAccessControl = await prisma.accessControl.update({
     where: {
-      FamilyTreeID: parseInt(familyTreeID),
-      UserID: parseInt(userID),
+      AccessID: `${userID}_${familyTreeID}`, // Provide the actual unique identifier
     },
     data: {
-      AccessLevel: accessLevel,
+      AccessType: accessType,
+      // other fields to update
     },
   });
 
@@ -67,6 +67,19 @@ const getAllAccess = async (familyTreeID) => {
   return accessControl;
 };
 
+const getAllEditFamilyTree = async (userID) => {
+  // Create the access control
+  const accessControl = await prisma.accessControl.findMany({
+    where: {
+      UserID: parseInt(userID),
+      AccessType: "edit",
+    },
+  });
+
+  // Return either the created access control
+  return accessControl;
+};
+
 const getAllAccessAccesTypeEdit = async (familyTreeID) => {
   // Create the access control
   const accessControl = await prisma.accessControl.findMany({
@@ -86,4 +99,5 @@ module.exports = {
   getAccess,
   getAllAccess,
   getAllAccessAccesTypeEdit,
+  getAllEditFamilyTree,
 };

@@ -37,10 +37,10 @@ familyTreeRouter.post("/",
       const ispublic = Boolean(req.body.ispublic);
       try {
         const familyTree = await familyTreeService.createFamilyTree(
-          name,
-          userID,
-          description,
-          ispublic
+            name,
+            userID,
+            description,
+            ispublic
         );
         if (!familyTree) {
           return res.status(404).json({ message: "FamilyTree not found" });
@@ -49,8 +49,8 @@ familyTreeRouter.post("/",
         }
       } catch (err) {
         return res.status(500).json({ message: err.message });
-      }
     }
+  }
 );
 
 familyTreeRouter.get("/search/:name", async (req, res) => {

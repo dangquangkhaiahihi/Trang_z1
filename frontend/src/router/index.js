@@ -8,6 +8,7 @@ import Register from "@/components/pages/Register.vue";
 import Profile from "@/components/pages/Profile.vue";
 import SuchPerson from "@/components/pages/SuchPerson.vue";
 import Chat from "@/components/pages/Chat.vue";
+import chooseFamilyTree from "@/components/pages/chooseFamilyTree.vue";
 
 const routes = [
   {
@@ -32,8 +33,9 @@ const routes = [
   },
 
   {
-    path: "/familytree",
+    path: "/familytree/:familyTreeId",
     name: "FamilyTree",
+    props: true,
     component: FamilyTree,
   },
   {
@@ -55,6 +57,11 @@ const routes = [
     path: "/Chat",
     name: "Chat",
     component: Chat,
+  },
+  {
+    path: "/chooseFamilyTree",
+    name: "chooseFamilyTree",
+    component: chooseFamilyTree,
   },
 ];
 

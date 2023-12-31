@@ -8,7 +8,7 @@ const accessControlService = require("./AccessControl");
 AccessControlRouter.post("/:familyTreeId/:userId", async (req, res) => {
   const familyTreeId = Number(req.params.familyTreeId);
   const userId = Number(req.params.userId);
-  const accessLevel = req.body.AccessLevel;
+  const accessType = req.body.AccessLevel;
   console.log(familyTreeId, "familyTreeId");
 
   /*   const existingAccess = await accessControlService.getAccess(
@@ -26,7 +26,7 @@ AccessControlRouter.post("/:familyTreeId/:userId", async (req, res) => {
     const accessControl = await accessControlService.giveAccess(
       familyTreeId,
       userId,
-      accessLevel
+      accessType
     );
 
     if (!accessControl) {
@@ -44,6 +44,23 @@ AccessControlRouter.get("/:familyTreeId", async (req, res) => {
   const familyTreeId = Number(req.params.familyTreeId);
   try {
     const accessControl = await accessControlService.getAllAccess(familyTreeId);
+    if (!accessControl) {
+      return res.status(404).json({ message: "AccessControl not found" });
+    } else {
+      return res.status(200).json(accessControl);
+    }
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+//GET: Get all family trees a user has access to #nottested
+AccessControlRouter.get("/user/:userid", async (req, res) => {
+  const userid = Number(req.params.userid);
+  try {
+    const accessControl = await accessControlService.getAllEditFamilyTree(
+      userid
+    );
     if (!accessControl) {
       return res.status(404).json({ message: "AccessControl not found" });
     } else {
@@ -77,12 +94,12 @@ AccessControlRouter.get("/:familyTreeId/:userId", async (req, res) => {
 AccessControlRouter.put("/:familyTreeId/:userId", async (req, res) => {
   const familyTreeId = Number(req.params.familyTreeId);
   const userId = Number(req.params.userId);
-  const accessLevel = req.body.AccessLevel;
+  const accessType = req.body.AccessType;
   try {
-    const accessControl = await accessControlService.updateAccess(
+    const accessControl = await accessControlService.changeAccess(
       familyTreeId,
       userId,
-      accessLevel
+      accessType
     );
     if (!accessControl) {
       return res.status(404).json({ message: "AccessControl not found" });

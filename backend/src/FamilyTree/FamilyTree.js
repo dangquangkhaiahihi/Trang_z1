@@ -86,9 +86,9 @@ const retrievePersonsInFamTree = async (familyTreeID) => {
   });
 
   return (
-    familyTree?.AccessControl.map(
-      (accessControl) => accessControl.FamilyObject
-    ) || null
+      familyTree?.AccessControl.map(
+          (accessControl) => accessControl.FamilyObject
+      ) || null
   );
 };
 
@@ -144,3 +144,4 @@ module.exports = {
   deleteNodePosition,
   searchAllFamilyTrees,
 };
+

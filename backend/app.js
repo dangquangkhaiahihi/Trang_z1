@@ -38,5 +38,11 @@ app.use("/database", databaseRouter);
 app.use("/familyTree", familyTree);
 app.use("/accessControl", accessControl);
 app.use("/relationsships", relationsships);
+app.get("/test-env", (req, res) => {
+  const databaseUrl = process.env.DATABASE_URL;
+  const jwtSecret = process.env.JWT_SECRET;
+
+  res.json({ databaseUrl, jwtSecret });
+});
 
 module.exports = app;

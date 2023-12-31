@@ -10,17 +10,24 @@
   </v-container>
 
   <v-container v-if="isAuthorized">
-    <DisplayFamilyTree FamilyTreeId="5" DisplaySize="100vh" />
+    <DisplayFamilyTree
+      :FamilyTreeId="this.familyTreeId"
+      DisplaySize="100vh"
+      :ReloadFamilyTree="this.shouldReloadFamilyTree"
+    />
   </v-container>
   <v-container>
-    <GoogleMaps />
+    <addPersons
+      :FamilyTreeId="this.familyTreeId"
+      @reload-family-tree="handleReloadFamilyTree"
+    />
   </v-container>
 </template>
 
 <script>
 import DisplayFamilyTree from "@/components/DisplayFamilyTree.vue";
 import GoogleMaps from "@/components/GoogleMaps.vue";
-import DemoButtons from "../DemoButtons.vue";
+import addPersons from "@/components/addPersons.vue";
 import axios from "axios";
 let backendURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -29,12 +36,27 @@ export default {
   components: {
     DisplayFamilyTree,
     GoogleMaps,
-    DemoButtons,
+    addPersons,
   },
+  props: {
+    familyTreeId: {
+      type: Number,
+      required: true,
+    },
+  },
+
   data: () => ({
     isAuthorized: false,
+    shouldReloadFamilyTree: false,
   }),
+  methods: {
+    handleReloadFamilyTree(value) {
+      this.shouldReloadFamilyTree = value;
+      console.log(this.shouldReloadFamilyTree);
+    },
+  },
   mounted() {
+    console.log("mounted", this.familyTreeId);
     axios
       .get(`${backendURL}/users/yes/authenticate`, {
         headers: {

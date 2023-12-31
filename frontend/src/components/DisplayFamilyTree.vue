@@ -10,7 +10,7 @@ import axios from "axios";
 import { onMounted, defineProps } from "vue";
 import { onBeforeMount } from "vue";
 let backendURL = import.meta.env.VITE_BACKEND_URL;
-const props = defineProps(["FamilyTreeId", "DisplaySize"]);
+const props = defineProps(["FamilyTreeId", "DisplaySize", "ReloadFamilyTree"]);
 
 const { toObject } = useVueFlow();
 
@@ -28,6 +28,7 @@ const familyTreeAccess = ref("");
 const user = ref([]);
 
 const nodePositionString = ref();
+const DisplaySize = displaySize.value.split("vh")[0];
 
 onBeforeMount(async () => {
   try {
@@ -44,125 +45,135 @@ onBeforeMount(async () => {
     );
 
     familyTreeAccess.value = accessControlResponse.data;
+    const FamilytreeResponse = await axios.get(
+      `${backendURL}/familyTree/${props.FamilyTreeId}`
+    );
+    flowKey.value = FamilytreeResponse.data.FamilyTreeName;
     console.log(props.DisplaySize, "DisplaySize");
   } catch (error) {
     console.error(error);
     throw error;
   }
   loading.value = false;
+  console.log("onBeforeMount", DisplaySize);
   onRestore();
+  console.log("flowname", this.flowKey);
 });
 onMounted(async () => {
   if (nodePositionString.length === 0) {
-    try {
-      axios
-        .get(`${backendURL}/persons/familyTree/${props.FamilyTreeId}`)
-        .then((response) => {
-          // Handle the response here
-          console.log(response.data);
-          sqlData.value = response.data;
+    const displayFamilyTree = async () => {
+      try {
+        axios
+          .get(`${backendURL}/persons/familyTree/${props.FamilyTreeId}`)
+          .then((response) => {
+            // Handle the response here
+            console.log(response.data);
+            sqlData.value = response.data;
 
-          const startY = 100; // Adjust the starting Y position
-          const spacingY = 100; // Adjust the spacing between rows
+            const startY = 100; // Adjust the starting Y position
+            const spacingY = 100; // Adjust the spacing between rows
 
-          const generations = new Map();
-          const generationHeights = {
-            "The Greatest Generation": 0,
-            "The Silent Generation": 1,
-            "The Baby Boomer Generation": 2,
-            "Generation X": 3,
-            Millennials: 4,
-            "Generation Z": 5,
-            "Gen Alpha": 6,
-          };
+            const generations = new Map();
+            const generationHeights = {
+              "The Greatest Generation": 0,
+              "The Silent Generation": 1,
+              "The Baby Boomer Generation": 2,
+              "Generation X": 3,
+              Millennials: 4,
+              "Generation Z": 5,
+              "Gen Alpha": 6,
+            };
 
-          // Use a dynamic variable to track the current X position for each generation
-          const startXByGeneration = {};
+            // Use a dynamic variable to track the current X position for each generation
+            const startXByGeneration = {};
 
-          response.data.forEach((person, index) => {
-            const birthYear = new Date(person.BirthDate).getFullYear();
-            let generation;
-            if (birthYear >= 1901 && birthYear <= 1927) {
-              generation = "The Greatest Generation";
-            } else if (birthYear >= 1928 && birthYear <= 1945) {
-              generation = "The Silent Generation";
-            } else if (birthYear >= 1946 && birthYear <= 1964) {
-              generation = "The Baby Boomer Generation";
-            } else if (birthYear >= 1965 && birthYear <= 1980) {
-              generation = "Generation X";
-            } else if (birthYear >= 1981 && birthYear <= 1996) {
-              generation = "Millennials";
-            } else if (birthYear >= 1996 && birthYear <= 2012) {
-              generation = "Generation Z";
-            } else {
-              generation = "Gen Alpha";
-            }
+            response.data.forEach((person, index) => {
+              const birthYear = new Date(person.BirthDate).getFullYear();
+              let generation;
+              if (birthYear >= 1901 && birthYear <= 1927) {
+                generation = "The Greatest Generation";
+              } else if (birthYear >= 1928 && birthYear <= 1945) {
+                generation = "The Silent Generation";
+              } else if (birthYear >= 1946 && birthYear <= 1964) {
+                generation = "The Baby Boomer Generation";
+              } else if (birthYear >= 1965 && birthYear <= 1980) {
+                generation = "Generation X";
+              } else if (birthYear >= 1981 && birthYear <= 1996) {
+                generation = "Millennials";
+              } else if (birthYear >= 1996 && birthYear <= 2012) {
+                generation = "Generation Z";
+              } else {
+                generation = "Gen Alpha";
+              }
 
-            // Set Y position for each generation
-            const newY = startY + generationHeights[generation] * spacingY;
+              // Set Y position for each generation
+              const newY = startY + generationHeights[generation] * spacingY;
 
-            // Set X position for each person within the same generation
-            const startX =
-              startXByGeneration[generation] ||
-              (startXByGeneration[generation] = 250);
+              // Set X position for each person within the same generation
+              const startX =
+                startXByGeneration[generation] ||
+                (startXByGeneration[generation] = 250);
 
-            /*         axios
+              /*         axios
           .get(`${backendURL}/relationsships/${person.PersonID}`)
           .then((response) => {
             // Handle the response here
             console.log(response.data);
           });
  */
-            console.log(newY, "newY");
-            nodes.value.push({
-              id: person.PersonID.toString(),
-              label: person.Firstname,
-              position: { x: startX, y: newY },
-              style: { backgroundColor: "green" },
-            });
-
-            // Update the X position for the next person in the same generation
-            startXByGeneration[generation] += 170; // Adjust spacingX as needed
-
-            // Store the generation for later use
-            generations.set(person.PersonID, generation);
-          });
-          generations.forEach((generation, personID) => {
-            console.log(`Person ID: ${personID}, Generation: ${generation}`);
-          }); // Map of PersonID and generation
-
-          axios
-            .get(
-              `${backendURL}/relationsships/familyTree/${props.FamilyTreeId}`
-            )
-            .then((response) => {
-              // Handle the response here
-              console.log(response.data, "relationships");
-
-              // Map relationships to nodes and edges
-              response.data.forEach((relationship) => {
-                const sourcePerson = nodes.value.find(
-                  (node) => node.id === relationship.PersonOneID?.toString()
-                );
-                const targetPerson = nodes.value.find(
-                  (node) => node.id === relationship.PersonTwoID?.toString()
-                );
-
-                if (sourcePerson && targetPerson) {
-                  edges.value.push({
-                    id: `e${relationship.RelationshipID}`,
-                    source: targetPerson.id,
-                    target: sourcePerson.id,
-                  });
-                }
+              console.log(newY, "newY");
+              nodes.value.push({
+                id: person.PersonID.toString(),
+                label: person.Firstname,
+                position: { x: startX, y: newY },
+                style: { backgroundColor: "green" },
               });
+
+              // Update the X position for the next person in the same generation
+              startXByGeneration[generation] += 170; // Adjust spacingX as needed
+
+              // Store the generation for later use
+              generations.set(person.PersonID, generation);
             });
-        });
-      loading.value = false;
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
+            generations.forEach((generation, personID) => {
+              console.log(`Person ID: ${personID}, Generation: ${generation}`);
+            }); // Map of PersonID and generation
+
+            axios
+              .get(
+                `${backendURL}/relationsships/familyTree/${props.FamilyTreeId}`
+              )
+              .then((response) => {
+                // Handle the response here
+                console.log(response.data, "relationships");
+
+                // Map relationships to nodes and edges
+                response.data.forEach((relationship) => {
+                  const sourcePerson = nodes.value.find(
+                    (node) => node.id === relationship.PersonOneID?.toString()
+                  );
+                  const targetPerson = nodes.value.find(
+                    (node) => node.id === relationship.PersonTwoID?.toString()
+                  );
+
+                  if (sourcePerson && targetPerson) {
+                    edges.value.push({
+                      id: `e${relationship.RelationshipID}`,
+                      source: targetPerson.id,
+                      target: sourcePerson.id,
+                    });
+                  }
+                });
+              });
+          });
+        console.log("flowname", this.flowKey.value);
+        loading.value = false;
+      } catch (error) {
+        console.error(error);
+        throw error;
+      }
+    };
+    displayFamilyTree();
   }
 });
 
@@ -185,6 +196,7 @@ const onSave = () => {
 };
 
 const onRestore = () => {
+  console.log("onRestore", props.ReloadFamilyTree);
   axios
     .get(`${backendURL}/familyTree/nodes/${props.FamilyTreeId}`)
     .then((response) => {
@@ -192,6 +204,7 @@ const onRestore = () => {
       // Handle the response as needed
       nodePositionString.value = response.data.NodePosition;
       console.log(props.DisplaySize, "DisplaySizes");
+
       try {
         const flow = JSON.parse(nodePositionString.value);
         position.value = flow;
@@ -204,17 +217,26 @@ const onRestore = () => {
     .catch((error) => {
       console.error("Error fetching node positions:", error);
     });
+  watch(
+    () => props.ReloadFamilyTree,
+    (newValue, oldValue) => {
+      if (newValue !== oldValue) {
+        console.log("Reloading component...");
+        displayFamilyTree();
+        onRestore();
+      }
+    }
+  );
 };
 </script>
 
 <template>
-  <div class="vue-flow-wrapper">
-    <v-progress-circular
-      v-if="loading"
-      indeterminate
-      ::size="75"
-      :width="8"
-    ></v-progress-circular>
+  <v-skeleton-loader
+    :loading="loading"
+    :elevation="1"
+    type="card"
+    class="vue-flow-wrapper"
+  >
     <VueFlow
       v-model:nodes="nodes"
       v-model:edges="edges"
@@ -226,7 +248,7 @@ const onRestore = () => {
     >
       <Background pattern-color="#aaa" :gap="8" />
 
-      <MiniMap v-if="displaySize > 70" />
+      <MiniMap v-if="DisplaySize > 70" />
       <Controls />
 
       <template #node-custom="nodeProps">
@@ -239,7 +261,7 @@ const onRestore = () => {
     </VueFlow>
 
     <div
-      v-if="familyTreeAccess === 'edit' && displaySize > 70"
+      v-if="familyTreeAccess === 'edit' && DisplaySize > 70"
       class="controls"
     >
       <div class="saveFlow">
@@ -250,7 +272,10 @@ const onRestore = () => {
         <v-btn @click="onRestore()">Restore Flow</v-btn>
       </div>
     </div>
-  </div>
+    <div class="flowname">
+      <p>{{ flowKey }}</p>
+    </div>
+  </v-skeleton-loader>
 </template>
 
 <style>
@@ -259,6 +284,14 @@ const onRestore = () => {
 
 /* import the default theme, this is optional but generally recommended */
 @import "@vue-flow/core/dist/theme-default.css";
+
+.flowname {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  padding: 10px;
+  border-radius: 10px;
+}
 
 .vue-flow-wrapper {
   position: relative;

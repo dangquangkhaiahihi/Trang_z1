@@ -44,8 +44,8 @@ export default {
     function changeTheme() {
       darkmode.value = !darkmode.value;
       theme.global.name.value = darkmode.value
-        ? "customDarkTheme"
-        : "customLightTheme";
+          ? "customDarkTheme"
+          : "customLightTheme";
     }
 
     onMounted(() => {
@@ -68,7 +68,7 @@ export default {
       },
       Stammbaum: {
         name: "Stammbaum",
-        path: "/familytree",
+        path: "/choosefamilytree",
       },
       Login: {
         name: "Login",
