@@ -55,8 +55,9 @@ familyTreeRouter.post("/",
 
 familyTreeRouter.get("/search/:name", async (req, res) => {
   const name = req.params.name;
+  const userId = req.query.userId;
   try {
-    const familyTrees = await familyTreeService.searchFamilyTrees(name);
+    const familyTrees = await familyTreeService.searchFamilyTrees(name, userId);
     if (!familyTrees || (familyTrees && familyTrees.length === 0)) {
       return res.status(404).json({ message: "FamilyTree not found" });
     } else {
@@ -68,8 +69,9 @@ familyTreeRouter.get("/search/:name", async (req, res) => {
 });
 
 familyTreeRouter.get("/searchAll", async (req, res) => {
+  const userId = req.query.userId;
   try {
-    const familyTrees = await familyTreeService.searchAllFamilyTrees();
+    const familyTrees = await familyTreeService.searchAllFamilyTrees(userId);
     if (!familyTrees || (familyTrees && familyTrees.length === 0)) {
       return res.status(404).json({ message: "FamilyTree not found" });
     } else {

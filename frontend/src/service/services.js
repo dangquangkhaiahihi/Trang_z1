@@ -1,11 +1,23 @@
 import { client } from "./axiosClient";
 
 const ApiServices = {
-  searchFamilyTree: (keyword)  => {
-    return client.get(`/familyTree/search/${keyword}`);
+  searchFamilyTree: (keyword, userId)  => {
+    let path = `/familyTree/search/${keyword}`;
+
+    if (userId) {
+      path += `?userId=${userId}`;
+    }
+
+    return client.get(path);
   },
-  searchAllFamilyTree: ()  => {
-    return client.get(`/familyTree/searchAll`);
+  searchAllFamilyTree: (userId)  => {
+    let path = `/familyTree/searchAll`;
+
+    if (userId) {
+      path += `?userId=${userId}`;
+    }
+
+    return client.get(path);
   },
   getFamilyTreeById: (id) => {
     return client.get(`/familyTree/getById/${id}`);

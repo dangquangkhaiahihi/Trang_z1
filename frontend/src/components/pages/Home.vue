@@ -110,7 +110,7 @@ export default {
     },
     searchFamilyTree() {
       if (this.keyword) {
-        ApiServices.searchFamilyTree(this.keyword)
+        ApiServices.searchFamilyTree(this.keyword, authenStore.user?.id,)
           .then((res) => {
             if (!res.data) return;
             this.familyTrees = res.data;
@@ -121,7 +121,7 @@ export default {
           })
           .finally(() => {});
       } else {
-        ApiServices.searchAllFamilyTree()
+        ApiServices.searchAllFamilyTree(authenStore.user?.id)
           .then((res) => {
             if (!res.data) return;
             this.familyTrees = res.data;
@@ -190,6 +190,10 @@ export default {
           this.closeDialog();
         });
     },
+    shouldDisplayJoinButton(tree) {
+      const userId = this.authenStore.user?.id;
+      return userId && userId + "_" + tree.FamilyTreeID !== tree.AccessControl?.AccessID && userId !== tree.OwnerUserID;
+    },
   },
 };
 </script>
@@ -237,7 +241,7 @@ export default {
                 <h4>Stammbaum Name: {{ tree.Name }}</h4>
                 <div class="buttons-wrap">
                   <v-btn
-                    v-if="authenStore.user?.id !== tree.OwnerUserID"
+                    v-if="shouldDisplayJoinButton(tree)"
                     @click="openRequestDialog(tree.FamilyTreeID)"
                   >
                     Join

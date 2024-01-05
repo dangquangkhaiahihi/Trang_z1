@@ -10,8 +10,8 @@ const getFamilyTree = async (id) => {
   });
 };
 
-const searchFamilyTrees = async (name) => {
-  return prisma.familyTree.findMany({
+const searchFamilyTrees = async (name, userId) => {
+  const familyTrees = await prisma.familyTree.findMany({
     where: {
       Name: {
         contains : name.toLowerCase()
@@ -22,10 +22,30 @@ const searchFamilyTrees = async (name) => {
       CreationDate: "desc",
     },
   });
+
+  if (!userId) return familyTrees;
+
+  // Fetch AccessControls for each FamilyTree and filter by userId
+  const familyTreeWithAccess = await Promise.all(
+    familyTrees.map(async (familyTree) => {
+      const accessControl = await prisma.accessControl.findFirst({
+        where: {
+          AccessID: userId + "_" + familyTree.FamilyTreeID,
+        },
+      });
+
+      return {
+        ...familyTree,
+        AccessControl: accessControl || null,
+      };
+    })
+  );
+
+  return familyTreeWithAccess;
 };
 
-const searchAllFamilyTrees = async () => {
-  return prisma.familyTree.findMany({
+const searchAllFamilyTrees = async (userId) => {
+  const familyTrees = await prisma.familyTree.findMany({
     where: {
       IsPublic: true,
     },
@@ -33,6 +53,26 @@ const searchAllFamilyTrees = async () => {
       CreationDate: "desc",
     },
   });
+
+  if (!userId) return familyTrees;
+
+  // Fetch AccessControls for each FamilyTree and filter by userId
+  const familyTreeWithAccess = await Promise.all(
+    familyTrees.map(async (familyTree) => {
+      const accessControl = await prisma.accessControl.findFirst({
+        where: {
+          AccessID: userId + "_" + familyTree.FamilyTreeID,
+        },
+      });
+
+      return {
+        ...familyTree,
+        AccessControl: accessControl || null,
+      };
+    })
+  );
+
+  return familyTreeWithAccess;
 };
 
 const setNodePosition = (nodePosition, familyTreeID) => {
