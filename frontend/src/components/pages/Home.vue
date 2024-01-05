@@ -3,15 +3,31 @@ import ApiServices from "../../service/services";
 import DisplayFamilyTree from "@/components/DisplayFamilyTree.vue";
 import { checkAutho } from "../../service/checkAutho";
 import { authenStore } from "@/store/authen.store";
+import addPersons from "@/components/addPersons.vue";
+import relationships from "@/components/Relationships.vue";
 
 export default {
   computed: {
     authenStore() {
       return authenStore;
     },
+    currentTitle() {
+      switch (this.step) {
+        case 1:
+          return "Create FamilyTree ";
+        case 2:
+          return "Add Persons ";
+        case 3:
+          return "Add Relationships ";
+        default:
+          return "Glückwunsch! Dein Familienstammbaum wurde erstellt ";
+      }
+    },
   },
   components: {
     DisplayFamilyTree,
+    addPersons,
+    relationships,
   },
   data: () => ({
     reveal: false,
@@ -20,6 +36,8 @@ export default {
     user: null,
     loading: false,
     shouldReloadFamilyTree: false,
+    familyTreeId: null,
+    creatingFamilyTreeFailed: false,
 
     // Control
     isOpenCreateDialog: false,
@@ -28,6 +46,7 @@ export default {
     isOpenErrorDialog: false,
     errorMessage: "",
     familyTreeId: "",
+    step: 1,
 
     // Search
     keyword: "",
@@ -52,6 +71,17 @@ export default {
     }
   },
   methods: {
+    handleReloadFamilyTree(value) {
+      this.shouldReloadFamilyTree = !this.shouldReloadFamilyTree;
+      console.log(this.shouldReloadFamilyTree);
+    },
+    getMaxWidth() {
+      if (this.step === 3) {
+        return "65%"; // Max width for the last step
+      } else {
+        return "50%"; // Max width for the first two steps
+      }
+    },
     SuchenNachPerson() {
       this.$router.push("/SuchPerson");
     },
@@ -113,12 +143,13 @@ export default {
           ispublic: this.ispublic,
         })
           .then((res) => {
-            console.log(res);
-            this.searchFamilyTree();
-            this.isOpenCreateDialog = false;
+            console.log(res, "res");
+            this.familyTreeId = res.data.FamilyTreeID;
+            this.step++;
           })
           .catch((err) => {
             console.log(err);
+            this.creatingFamilyTreeFailed = true;
             if (err.response.status == "401") {
               // TO DO : Show noti or something
             }
@@ -145,20 +176,20 @@ export default {
     },
     requestJoinTree() {
       ApiServices.requestJoinTree({
-        "familyTreeId": this.familyTreeId,
-        "userId": authenStore.user?.id
+        familyTreeId: this.familyTreeId,
+        userId: authenStore.user?.id,
       })
-          .then((res) => {
-            console.log("resssss", res)
-          })
-          .catch((err) => {
-            console.log(err);
-            this.openErrorDialog(err.response.data.message);
-          })
-          .finally(() => {
-            this.closeDialog();
-          });
-    }
+        .then((res) => {
+          console.log("resssss", res);
+        })
+        .catch((err) => {
+          console.log(err);
+          this.openErrorDialog(err.response.data.message);
+        })
+        .finally(() => {
+          this.closeDialog();
+        });
+    },
   },
 };
 </script>
@@ -182,68 +213,150 @@ export default {
             <h1>Explore your family tree now!</h1>
             <h2>Search for a specific family tree</h2>
             <div class="search-box">
-              <input placeholder="Search Family Tree" v-model="keyword" />
-              <button @click="searchFamilyTree">Search</button>
+              <v-text-field
+                color="third"
+                variant="underlined"
+                placeholder="Suche Familienstammbaum"
+                v-model="keyword"
+                :style="rounded"
+              />
+              <v-btn class="mt-2" variant="outlined" @click="searchFamilyTree"
+                >Suche</v-btn
+              >
             </div>
             <div class="search-tree-results">
               <div class="search-tree-item create" @click="openCreateDialog">
                 <img src="/images/create-icon.png" alt="create" />
               </div>
-              <div
+              <v-card
+                variant="outlined"
                 v-for="tree in familyTrees"
                 :key="tree.FamilyTreeID"
                 class="search-tree-item"
               >
-                <h4>Tree Name: {{ tree.Name }}</h4>
+                <h4>Stammbaum Name: {{ tree.Name }}</h4>
                 <div class="buttons-wrap">
-                  <button v-if="authenStore.user?.id !== tree.OwnerUserID" @click="openRequestDialog(tree.FamilyTreeID)">
+                  <v-btn
+                    v-if="authenStore.user?.id !== tree.OwnerUserID"
+                    @click="openRequestDialog(tree.FamilyTreeID)"
+                  >
                     Join
-                  </button>
-                  <button @click="findUniqueTree(tree.FamilyTreeID)">
+                  </v-btn>
+                  <v-btn @click="findUniqueTree(tree.FamilyTreeID)">
                     View
-                  </button>
+                  </v-btn>
                 </div>
-              </div>
+              </v-card>
             </div>
           </div>
         </v-container>
       </v-col>
     </v-row>
 
-    <v-dialog v-model="isOpenCreateDialog" max-width="50%">
+    <v-dialog
+      v-model="isOpenCreateDialog"
+      :style="{ 'max-width': getMaxWidth() }"
+    >
       <v-card>
-        <v-card-title> Create Family Tree </v-card-title>
+        <v-card-title
+          class="text-h6 font-weight-regular text-center mx-auto justify-space-between mb-3 mt-3"
+        >
+          <span>{{ currentTitle }}</span>
+          <v-avatar
+            v-if="step < 3"
+            color="primary"
+            size="24"
+            v-text="step"
+          ></v-avatar>
+        </v-card-title>
+        <v-spacer></v-spacer>
+        <v-scroll-y>
+          <v-window v-model="step">
+            <v-window-item :value="1">
+              <v-card>
+                <div v-if="authenStore.loggedIn">
+                  <v-sheet width="300" class="mx-auto">
+                    <v-form ref="form">
+                      <v-text-field
+                        v-model="name"
+                        :rules="nameRules"
+                        label="Name"
+                        required
+                      ></v-text-field>
 
-        <div v-if="authenStore.loggedIn">
-          <v-sheet width="300" class="mx-auto">
-            <v-form ref="form">
-              <v-text-field
-                v-model="name"
-                :rules="nameRules"
-                label="Name"
-                required
-              ></v-text-field>
+                      <v-text-field
+                        v-model="desc"
+                        :rules="descRules"
+                        label="Description"
+                        required
+                      ></v-text-field>
 
-              <v-text-field
-                v-model="desc"
-                :rules="descRules"
-                label="Description"
-                required
-              ></v-text-field>
+                      <v-checkbox
+                        v-model="ispublic"
+                        label="Public"
+                      ></v-checkbox>
+                    </v-form>
+                  </v-sheet>
+                  <v-row v-if="loginFailed" class="mt-2">
+                    <v-col>
+                      <v-alert type="error">
+                        Stammbaum erstellung fehlgeschlagen.
+                      </v-alert>
+                    </v-col>
+                  </v-row>
+                </div>
 
-              <v-checkbox v-model="ispublic" label="Public"></v-checkbox>
-            </v-form>
-          </v-sheet>
-        </div>
-        <div v-else>
-          <v-sheet width="300" class="mx-auto">
-            You have to log in to Create Family Tree
-          </v-sheet>
-        </div>
+                <div v-else>
+                  <v-sheet width="300" class="mx-auto">
+                    You have to log in to Create Family Tree
+                  </v-sheet>
+                </div>
 
-        <v-card-actions style="display: flex; justify-content: end">
-          <v-btn @click="closeDialog">Close</v-btn>
-          <v-btn variant="elevated" @click="createFamilyTree">Create</v-btn>
+                <v-card-actions style="display: flex; justify-content: end">
+                  <v-btn @click="closeDialog">Close</v-btn>
+                  <v-btn variant="elevated" @click="createFamilyTree"
+                    >Create</v-btn
+                  >
+                </v-card-actions>
+              </v-card>
+            </v-window-item>
+
+            <v-window-item :value="2">
+              <addPersons
+                :FamilyTreeId="this.familyTreeId"
+                :ReloadFamilyTree="this.shouldReloadFamilyTree"
+              />
+            </v-window-item>
+            <v-window-item :value="3">
+              <relationships :FamilyTreeId="this.familyTreeId" />
+            </v-window-item>
+            <v-window-item :value="4">
+              <v-card>
+                <v-alert type="success">
+                  Gehe zu deinem Stammbaum, um die Ergebnisse zu sehen
+                </v-alert>
+                <v-card-text>
+                  <v-btn
+                    color="primary"
+                    @click="this.$router.push('/chooseFamilyTree')"
+                    >Go to Family Tree</v-btn
+                  >
+                </v-card-text>
+                <v-card-actions style="display: flex; justify-content: end">
+                  <v-btn @click="closeDialog">Close</v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-window-item>
+          </v-window>
+        </v-scroll-y>
+        <!--   <v-divider></v-divider> -->
+
+        <v-card-actions v-if="step > 1 && step < 4">
+          <v-btn v-if="step > 1" variant="text" @click="step--"> Back </v-btn>
+          <v-spacer></v-spacer>
+          <v-btn v-if="step > 1 && step < 4" variant="flat" @click="step++">
+            Next
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -256,6 +369,11 @@ export default {
           <v-row no-gutters>
             <v-col cols="6" class="description">
               Description : {{ detailSelected.Describtion }}
+              <relationships
+                :FamilyTreeId="detailSelected.FamilyTreeID"
+                v-if="authenStore.loggedIn"
+                @reload-family-tree="handleReloadFamilyTree"
+              />
             </v-col>
             <v-col
               cols="6"
@@ -285,7 +403,7 @@ export default {
 
     <v-dialog v-model="isOpenRequestDialog" max-width="50%">
       <v-card>
-        <v-card-title> Join Family Tree </v-card-title>
+        <v-card-title color=""> Join Family Tree </v-card-title>
 
         <div v-if="authenStore.loggedIn">
           <v-sheet width="300" class="mx-auto">
@@ -315,7 +433,7 @@ export default {
         <v-card-title> Error </v-card-title>
 
         <v-sheet width="300" class="mx-auto">
-          <p>{{this.errorMessage}}</p>
+          <p>{{ this.errorMessage }}</p>
         </v-sheet>
 
         <v-card-actions style="display: flex; justify-content: end">
@@ -327,108 +445,120 @@ export default {
 
   <h1 class="pa-md-15 mx-lg-auto text-center">How to</h1>
 
-  <v-container>
-    <v-row align="center" justify="center">
-      <v-card class="mx-auto rounded-xl" max-width="344" variant="outlined">
-        <v-card-item>
-          <div>
-            <div class="text-overline mb-1">Hinweis für Sie</div>
-            <div class="text-h4 mb-4">Step 1</div>
-            <div class="text-caption">
-              Werden Sie einer unserer Benutzer, indem Sie auf unserer Website
-              ein Konto erstellen, um unsere umfangreichen Ressourcen an
-              Stammbäumen anzuzeigen. Sie werden überrascht sein, was Sie finden
-              können!
+  <v-container class="mb-5">
+    <v-row justify="center" align="center">
+      <!-- Step 1 -->
+      <v-col>
+        <v-card class="mx-auto rounded-xl" max-width="344" variant="outlined">
+          <v-card-item>
+            <div>
+              <div class="text-overline mb-1">Hinweis für Sie</div>
+              <div class="text-h4 mb-4">Schritt 1</div>
+              <div class="text-caption">
+                <p>Stammbaum erstellen:</p>
+                <ul>
+                  <li>Drücken Sie auf das Plus-Symbol.</li>
+                  <li>Geben Sie die Informationen ein.</li>
+                  <li>Klicken Sie auf "Erstellen".</li>
+                  <li>Klicken Sie auf "Weiter"</li>
+                </ul>
+              </div>
             </div>
-          </div>
-        </v-card-item>
+          </v-card-item>
+          <v-card-actions>
+            <v-btn variant="text" @click="reveal = !reveal">
+              {{ reveal ? "Schließen" : "Weiterlesen" }}
+            </v-btn>
+          </v-card-actions>
 
-        <v-card-actions>
-          <v-btn variant="text" @click="reveal = true"> Weiterlesen </v-btn>
-        </v-card-actions>
+          <v-expand-transition>
+            <v-card v-if="reveal" class="v-card--reveal" style="height: 100%">
+              <v-card-text class="pb-0">
+                <p>
+                  - Sie müssen eingeloggt sein, um einen Stammbaum zu erstellen.
+                </p>
+              </v-card-text>
+            </v-card>
+          </v-expand-transition>
+        </v-card>
+      </v-col>
 
-        <v-expand-transition>
-          <v-card v-if="reveal" class="v-card--reveal" style="height: 100%">
-            <v-card-text class="pb-0">
-              <p>
-                Um ein Konto zu erstellen, benötigen Sie eine E-Mail-Adresse,
-                ein sicheres Passwort und vor allem die Motivation, Ihren
-                Stammbaum herauszufinden
-              </p>
-            </v-card-text>
-            <v-card-actions class="pt-0">
-              <v-btn variant="text" @click="reveal = false"> Close </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-expand-transition>
-      </v-card>
-
-      <v-card class="mx-auto rounded-xl" max-width="344" variant="outlined">
-        <v-card-item>
-          <div>
-            <div class="text-overline mb-1">Hinweis für Sie</div>
-            <div class="text-h4 mb-4">Step 2</div>
-            <div class="text-caption">
-              Nachdem Sie ein Konto erstellt haben, können Sie mit unserer
-              vertrauenswürdigen Suchmethode die Informationen anderer
-              Stammbäume einsehen. Wenn Ihr Stammbaum nicht verfügbar ist,
-              können Sie Ihren eigenen erstellen.
+      <!-- Step 2 -->
+      <v-col>
+        <v-card class="mx-auto rounded-xl" max-width="344" variant="outlined">
+          <v-card-item>
+            <div>
+              <div class="text-overline mb-1">Hinweis für Sie</div>
+              <div class="text-h4 mb-4">Schritt 2</div>
+              <div class="text-caption">
+                <p>Personen hinzufügen:</p>
+                <ul>
+                  <li>Geben Sie die Informationen ein.</li>
+                  <li>Klicken Sie auf "Erstellen".</li>
+                  <li>
+                    Klicken Sie auf "Weiter", wenn alle Personen erstellt sind.
+                  </li>
+                </ul>
+              </div>
             </div>
-          </div>
-        </v-card-item>
+          </v-card-item>
+          <v-card-actions>
+            <v-btn variant="text" @click="reveal1 = !reveal1">
+              {{ reveal1 ? "Schließen" : "Weiterlesen" }}
+            </v-btn>
+          </v-card-actions>
 
-        <v-card-actions>
-          <v-btn variant="text" @click="reveal1 = true"> Weiterlesen </v-btn>
-        </v-card-actions>
+          <v-expand-transition>
+            <v-card v-if="reveal1" class="v-card--reveal" style="height: 100%">
+              <v-card-text class="pb-0">
+                <p></p>
+              </v-card-text>
+            </v-card>
+          </v-expand-transition>
+        </v-card>
+      </v-col>
 
-        <v-expand-transition>
-          <v-card v-if="reveal1" class="v-card--reveal" style="height: 100%">
-            <v-card-text class="pb-0">
-              <p>
-                Mit nur einem Klick auf die Suchschaltfläche werden Sie von
-                unseren passenden Ergebnissen überrascht sein. Gerne können Sie
-                mit dem Add-Icon Ihren eigenen Stammbaum erstellen
-              </p>
-            </v-card-text>
-            <v-card-actions class="pt-0">
-              <v-btn variant="text" @click="reveal1 = false"> Close </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-expand-transition>
-      </v-card>
-
-      <v-card class="mx-auto rounded-xl" max-width="344" variant="outlined">
-        <v-card-item>
-          <div>
-            <div class="text-overline mb-1">Hinweis für Sie</div>
-            <div class="text-h4 mb-4">Step 3</div>
-            <div class="text-caption">
-              Auf unserer Website haben Sie jederzeit die Möglichkeit, die
-              Informationen Ihres eigenen Stammbaums anzupassen. Darüber hinaus
-              können Sie auch die Beziehungen zwischen Familienmitgliedern
-              anzeigen
+      <!-- Step 3 -->
+      <v-col>
+        <v-card class="mx-auto rounded-xl" max-width="344" variant="outlined">
+          <v-card-item>
+            <div>
+              <div class="text-overline mb-1">Hinweis für Sie</div>
+              <div class="text-h4 mb-4">Schritt 3</div>
+              <div class="text-caption">
+                <p>Beziehungen anlegen:</p>
+                <ul>
+                  <li>Wählen Sie die Person mit Kind-Beziehung aus.</li>
+                  <li>
+                    Klicken Sie auf das Elternteil und wählen Sie "Vater" oder
+                    "Mutter".
+                  </li>
+                  <li>Klicken Sie auf "Zur Liste hinzufügen ".</li>
+                </ul>
+              </div>
             </div>
-          </div>
-        </v-card-item>
+          </v-card-item>
 
-        <v-card-actions>
-          <v-btn variant="text" @click="reveal2 = true"> Weiterlesen </v-btn>
-        </v-card-actions>
+          <v-card-actions>
+            <v-btn variant="text" @click="reveal2 = !reveal2">
+              {{ reveal2 ? "Schließen" : "Weiterlesen" }}
+            </v-btn>
+          </v-card-actions>
 
-        <v-expand-transition>
-          <v-card v-if="reveal2" class="v-card--reveal" style="height: 100%">
-            <v-card-text class="pb-0">
-              <p>
-                Dazu müssen Sie Ihre Profilseite oder Ihre
-                Stammbauminformationen aufrufen. Viel Spaß!!
-              </p>
-            </v-card-text>
-            <v-card-actions class="pt-0">
-              <v-btn variant="text" @click="reveal2 = false"> Close </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-expand-transition>
-      </v-card>
+          <v-expand-transition>
+            <v-card v-if="reveal2" class="v-card--reveal" style="height: 100%">
+              <v-card-text class="pb-0">
+                <p>
+                  - Rufen Sie Ihre Profilseite oder Stammbauminformationen auf.
+                </p>
+                <p>
+                  - Sie müssen eingeloggt sein, um Beziehungen zu speichern.
+                </p>
+              </v-card-text>
+            </v-card>
+          </v-expand-transition>
+        </v-card>
+      </v-col>
     </v-row>
   </v-container>
 </template>
@@ -445,11 +575,12 @@ export default {
 <style scoped>
 .search-tree-wrapper {
   /* background-image: url(/images/Bild1.jpg); */
-  background: linear-gradient(
+  /* background: linear-gradient(
       rgba(255, 255, 255, 0.8),
       rgba(255, 255, 255, 0.8)
-    ),
-    url(https://images.pexels.com/photos/3875160/pexels-photo-3875160.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2);
+  ),
+  url(https://images.pexels.com/photos/3875160/pexels-photo-3875160.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2);
+  */
   background-size: cover;
   background-position: center;
   position: relative;
@@ -469,21 +600,6 @@ export default {
   justify-content: center;
 }
 
-.search-tree-content .search-box input {
-  width: 70%;
-  border: solid 2px #566156;
-  border-radius: 30px;
-
-  padding: 10px 20px;
-}
-
-.search-tree-content .search-box button {
-  border: solid 2px #566156;
-  border-radius: 30px;
-
-  padding: 10px 20px;
-}
-
 .search-tree-results {
   height: 100%;
   display: flex;
@@ -499,30 +615,10 @@ export default {
   width: 6px; /* Set the width of the scrollbar */
 }
 
-/* Handle on hover */
-::-webkit-scrollbar:hover {
-  background: #f1f1f1; /* Background color on hover */
-}
-
-/* Track */
-::-webkit-scrollbar-track {
-  background: #f1f1f1; /* Color of the track */
-}
-
-/* Handle */
-::-webkit-scrollbar-thumb {
-  background: #a9b5a9; /* Color of the thumb */
-}
-
-/* Handle on hover */
-::-webkit-scrollbar-thumb:hover {
-  background: #566156; /* Color of the thumb on hover */
-}
 .search-tree-item {
   width: 200px;
   height: 180px;
   border-radius: 20px;
-  border: solid 2px #566156;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -550,14 +646,9 @@ export default {
   height: auto;
 }
 
-.search-tree-item h4 {
-}
-
 .search-tree-item button {
   width: 50%;
-  background-color: #a9b5a9;
   padding: 5px 20px;
-  border: solid #566156 2px;
   border-radius: 30px;
 }
 
@@ -584,7 +675,6 @@ export default {
   right: 0;
   width: 100%;
   height: 100%;
-  background: rgb(226, 210, 196);
   border-radius: 5px;
   z-index: 999;
   text-align: center;
